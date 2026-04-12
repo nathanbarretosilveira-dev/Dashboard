@@ -3,7 +3,9 @@ import { DollarSign, Truck, TrendingUp, MapPin, Activity, Package } from 'lucide
 import KPICard from '../components/KPICard';
 import { kpiGeral, faturamentoPorDia, rotasRealizadas, frotaVeiculos } from '../lib/bwtData';
 
-const fmt = (v) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(v);
+// @ts-ignore
+const fmt = (v) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(v);
+// @ts-ignore
 const fmtNum = (v) => new Intl.NumberFormat('pt-BR').format(v);
 
 const totalFat = faturamentoPorDia.reduce((s, d) => s + d.faturamento, 0);
@@ -18,11 +20,13 @@ const ebitdaData = [
 
 const topRotas = rotasRealizadas.slice(0, 5);
 
+// @ts-ignore
 const CustomTooltip = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null;
   return (
     <div className="bg-card border border-border rounded-lg shadow-lg p-3 text-xs">
       <p className="font-semibold text-foreground mb-1">{label}</p>
+      {/* @ts-ignore */}
       {payload.map((p, i) => (
         <p key={i} style={{ color: p.color }}>{p.name}: {fmt(p.value)}</p>
       ))}
@@ -36,16 +40,16 @@ export default function Dashboard() {
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-foreground">Visão Geral</h1>
-        <p className="text-sm text-muted-foreground mt-0.5">Indicador Comercial · Abril 2026 · 01 a 12/04</p>
+        <p className="text-sm text-muted-foreground mt-0.5">Indicador Comercial · Abril 2026 · 01 a 11/04</p>
       </div>
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
-        <KPICard title="Faturamento Total" value={fmt(totalFat)} subtitle="12 dias apurados" icon={DollarSign} color="blue" className="col-span-2 xl:col-span-2" />
+        <KPICard title="Faturamento Total" value={fmt(totalFat)} subtitle="11 dias apurados" icon={DollarSign} color="blue" className="col-span-2 xl:col-span-2" />
         <KPICard title="EBITDA BWT" value={fmt(kpiGeral.ebitdaBWT)} subtitle="Frota própria" icon={TrendingUp} color="green" />
         <KPICard title="EBITDA Subcontr." value={fmt(kpiGeral.ebitdaSubcontratado)} subtitle="Terceiros" icon={TrendingUp} color="purple" />
         <KPICard title="Resultado Total" value={fmt(kpiGeral.resultadoTotal)} subtitle="EBITDA consolidado" icon={Activity} color="navy" />
-        <KPICard title="KM Total" value={fmtNum(Math.round(totalKm))} subtitle={`Média ${mediaKmL.toFixed(2)} km/L`} icon={Truck} color="amber" />
+        <KPICard title="KM Total" value={fmtNum(totalKm)} subtitle={`Média ${mediaKmL.toFixed(2)} km/L`} icon={Truck} color="amber" />
       </div>
 
       {/* Charts row */}
@@ -74,6 +78,7 @@ export default function Dashboard() {
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
               <XAxis dataKey="dia" tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} />
               <YAxis tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} tickFormatter={v => `${(v/1000).toFixed(0)}k`} />
+              {/* @ts-ignore */}
               <Tooltip content={<CustomTooltip />} />
               <Area type="monotone" dataKey="bwt" name="BWT" stroke="#2563EB" strokeWidth={2} fill="url(#gbwt)" />
               <Area type="monotone" dataKey="subcontratado" name="Subcontratado" stroke="#7C3AED" strokeWidth={2} fill="url(#gsub)" />

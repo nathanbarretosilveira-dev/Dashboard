@@ -116,14 +116,37 @@ def _rows_with_headers(rows, header_row_index=0):
 def build_data():
     sheets = _load_workbook_sheets(XLSX_PATH)
 
+    # Ler KPI resumidos diretamente das primeiras linhas (após header)
+    bwt_sheet = sheets.get("BWT", [])
+    ebitda_bwt = 0.0
+    ebitda_subcontratado = 0.0
+    resultado_total = 0.0
+    
+    # Linha 0: EBITDA BWT (coluna V, valor em W)
+    if len(bwt_sheet) > 0:
+        row0 = bwt_sheet[0]
+        if "EBITDA BWT" in str(row0.get("V", "")):
+            ebitda_bwt = _safe_float(row0.get("W", 0))
+    
+    # Linha 1: EBITDA SUBCONTRATADO (coluna V, valor em W)
+    if len(bwt_sheet) > 1:
+        row1 = bwt_sheet[1]
+        if "EBITDA SUBCONTRATADO" in str(row1.get("V", "")):
+            ebitda_subcontratado = _safe_float(row1.get("W", 0))
+    
+    # Linha 2: RESULTADO (coluna V, valor em W)
+    if len(bwt_sheet) > 2:
+        row2 = bwt_sheet[2]
+        if "RESULTADO" in str(row2.get("V", "")):
+            resultado_total = _safe_float(row2.get("W", 0))
+
     bwt_rows = _rows_with_headers(sheets.get("BWT", []), 0)
     fat_rows = _rows_with_headers(sheets.get("Faturamento", []), 0)
     tele_rows = _rows_with_headers(sheets.get("Telemetria Sighra", []), 0)
     rotas_rows = _rows_with_headers(sheets.get("Rotas", []), 0)
 
     frota_veiculos = []
-    ebitda_bwt = 0.0
-    resultado_total = 0.0
+    # Processar dados de frota
     for row in bwt_rows:
         placa = str(row.get("placa", "")).strip()
         if not placa:
@@ -146,12 +169,9 @@ def build_data():
             "litros": _safe_float(row.get("litros_consumidos")),
         }
         frota_veiculos.append(item)
-        ebitda_bwt += item["ebitdaEstimado"]
-        resultado_total += item["resultado"]
 
     faturamento_data = []
     fat_by_day = defaultdict(lambda: {"bwt": 0.0, "subcontratado": 0.0})
-    sub_ebitda_proxy = 0.0
 
     for row in fat_rows:
         cte = str(row.get("cte", "")).strip()
@@ -160,11 +180,20 @@ def build_data():
         empresa = str(row.get("empresa", "")).strip() or "BWT"
         valor = _safe_float(row.get("valor_total"))
         pedagio = _safe_float(row.get("pedagio"))
+        
+        # Ler placa: primeiramente tenta coluna "cavalo" (AC)
+        placa = str(row.get("cavalo", "")).strip()
+        
+        # Se cavalo for "0" ou vazio, é subcontratado - usa a coluna "placas"
+        if placa == "0" or placa == "":
+            placas_raw = str(row.get("placas", "")).strip()
+            placa = placas_raw.split("-")[0].strip() if placas_raw else ""
 
         record = {
             "cte": cte,
             "data": _excel_date_to_br(row.get("data")),
             "motorista": str(row.get("motorista", "")).strip(),
+            "placa": placa,
             "rota": str(row.get("rota", "")).strip(),
             "tomador": str(row.get("tomador", "")).strip(),
             "quantidade": _safe_float(row.get("quantidade")),
@@ -180,10 +209,9 @@ def build_data():
             fat_by_day[day]["bwt"] += valor
         else:
             fat_by_day[day]["subcontratado"] += valor
-            sub_ebitda_proxy += valor - pedagio
 
     faturamento_por_dia = [
-        {"dia": d, "bwt": round(v["bwt"], 2), "subcontratado": round(v["subcontratado"], 2), "faturamento": round(v["bwt"] + v["subcontratado"], 2)}
+        {"dia": d, "bwt": v["bwt"], "subcontratado": v["subcontratado"], "faturamento": v["bwt"] + v["subcontratado"]}
         for d, v in sorted(fat_by_day.items(), key=lambda t: int(t[0]) if t[0].isdigit() else 99)
     ]
 
@@ -193,7 +221,7 @@ def build_data():
         rota_agg[rota]["viagens"] += 1
         rota_agg[rota]["valorTotal"] += row["valorTotal"]
     rotas_realizadas = [
-        {"rota": rota, "viagens": v["viagens"], "valorTotal": round(v["valorTotal"], 2)}
+        {"rota": rota, "viagens": v["viagens"], "valorTotal": v["valorTotal"]}
         for rota, v in sorted(rota_agg.items(), key=lambda t: t[1]["valorTotal"], reverse=True)
     ]
 
@@ -235,9 +263,9 @@ def build_data():
 
     data = {
         "kpiGeral": {
-            "ebitdaBWT": round(ebitda_bwt, 2),
-            "ebitdaSubcontratado": round(sub_ebitda_proxy * 0.12, 2),
-            "resultadoTotal": round(resultado_total + (sub_ebitda_proxy * 0.12), 2),
+            "ebitdaBWT": ebitda_bwt,
+            "ebitdaSubcontratado": ebitda_subcontratado,
+            "resultadoTotal": resultado_total,
         },
         "faturamentoPorDia": faturamento_por_dia,
         "rotasRealizadas": rotas_realizadas,

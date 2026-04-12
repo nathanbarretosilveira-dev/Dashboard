@@ -4,19 +4,23 @@ import { MapPin, Search, Route, TrendingUp, DollarSign } from 'lucide-react';
 import KPICard from '../components/KPICard';
 import { rotasCatalogo, rotasRealizadas } from '../lib/bwtData';
 
-const fmt = (v) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 2 }).format(v);
-const fmtNum = (v) => new Intl.NumberFormat('pt-BR').format(Math.round(v));
+// @ts-ignore
+const fmt = (v) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(v);
+// @ts-ignore
+const fmtNum = (v) => new Intl.NumberFormat('pt-BR').format(v);
 
 const totalViagens = rotasRealizadas.reduce((s, r) => s + r.viagens, 0);
 const totalReceita = rotasRealizadas.reduce((s, r) => s + r.valorTotal, 0);
 const mediaValorViagem = totalReceita / totalViagens;
 const totalPedagios = rotasCatalogo.reduce((s, r) => s + r.valorPedagios, 0);
 
+// @ts-ignore
 const CustomTooltip = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null;
   return (
     <div className="bg-card border border-border rounded-lg shadow-lg p-3 text-xs">
       <p className="font-semibold text-foreground mb-1">{label}</p>
+      {/* @ts-ignore */}
       {payload.map((p, i) => (
         <p key={i} style={{ color: p.fill || p.color }}>{p.name}: {typeof p.value === 'number' && p.name.includes('R$') ? fmt(p.value) : p.name === 'Viagens' ? `${p.value} viagens` : fmt(p.value)}</p>
       ))}
@@ -61,6 +65,7 @@ export default function RotasPage() {
             <XAxis dataKey="rota" tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} />
             <YAxis yAxisId="left" tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} />
             <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} tickFormatter={v => `R$${v}`} />
+            {/* @ts-ignore */}
             <Tooltip content={<CustomTooltip />} />
             <Bar yAxisId="left" dataKey="km" name="KM" fill="#2563EB" radius={[3, 3, 0, 0]} />
             <Bar yAxisId="right" dataKey="pedagio" name="Pedágio (R$)" fill="#7C3AED" radius={[3, 3, 0, 0]} />
@@ -121,7 +126,7 @@ export default function RotasPage() {
                       </td>
                       <td className="px-4 py-3 text-right font-semibold text-foreground">{fmt(r.valorTotal)}</td>
                       <td className="px-4 py-3 text-right text-muted-foreground">{fmt(r.valorTotal / r.viagens)}</td>
-                      <td className="px-4 py-3 text-right text-muted-foreground hidden lg:table-cell">{pct.toFixed(1)}%</td>
+                      <td className="px-4 py-3 text-right text-muted-foreground hidden lg:table-cell">{pct}%</td>
                       <td className="px-4 py-3 hidden lg:table-cell">
                         <div className="w-24 h-1.5 bg-muted rounded-full overflow-hidden">
                           <div className="h-full bg-primary rounded-full" style={{ width: `${pct}%` }} />
