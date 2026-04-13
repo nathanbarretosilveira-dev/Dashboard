@@ -1,7 +1,9 @@
+// @ts-nocheck
 import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 import { DollarSign, Truck, TrendingUp, MapPin, Activity, Package } from 'lucide-react';
 import KPICard from '../components/KPICard';
-import { kpiGeral, faturamentoPorDia, rotasRealizadas, frotaVeiculos } from '../lib/bwtData';
+import { kpiGeral, faturamentoPorDia, rotasRealizadas, frotaVeiculos, faturamentoData } from '../lib/bwtData';
+import { LabelList } from 'recharts';
 
 // @ts-ignore
 const fmt = (v) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(v);
@@ -13,12 +15,57 @@ const totalKm = frotaVeiculos.reduce((s, v) => s + v.hodometro, 0);
 const totalLitros = frotaVeiculos.reduce((s, v) => s + v.litros, 0);
 const mediaKmL = totalKm / totalLitros;
 
+const diasApurados = faturamentoPorDia.length;
+
 const ebitdaData = [
   { name: 'BWT', value: kpiGeral.ebitdaBWT, color: '#2563EB' },
   { name: 'Subcontratado', value: kpiGeral.ebitdaSubcontratado, color: '#7C3AED' },
 ];
 
 const topRotas = rotasRealizadas.slice(0, 5);
+
+// Normaliza nome do cliente (agrupa corretamente)
+const normalizarCliente = (nome) => {
+  if (!nome) return "";
+
+  const nomeUpper = nome.toUpperCase();
+
+  // ⚠️ ORDEM IMPORTA
+  if (nomeUpper.includes("POTENCIAL AGRO")) return "POTENCIAL AGRO";
+  if (nomeUpper.includes("POTENCIAL")) return "POTENCIAL";
+
+  if (nomeUpper.includes("ROYAL FIC")) return "ROYALFIC";
+
+  if (nomeUpper.includes("IPIRANGA")) return "IPIRANGA";
+  if (nomeUpper.includes("PETROBRAS")) return "PETROBRAS";
+  if (nomeUpper.includes("RAIZEN")) return "RAIZEN";
+
+  return nomeUpper.split(" ")[0];
+};
+
+// Top 10 Clientes
+const topClientes = Object.values(
+  faturamentoData.reduce((acc, item) => {
+    const nome = normalizarCliente(item.tomador);
+
+    if (!nome) return acc;
+
+    if (!acc[nome]) {
+      acc[nome] = {
+        cliente: nome,
+        faturamento: 0,
+        viagens: 0,
+      };
+    }
+
+    acc[nome].faturamento += Number(item.valorTotal || 0);
+    acc[nome].viagens += 1;
+
+    return acc;
+  }, {})
+)
+  .sort((a, b) => b.faturamento - a.faturamento)
+  .slice(0, 10);
 
 // @ts-ignore
 const CustomTooltip = ({ active, payload, label }) => {
@@ -40,12 +87,12 @@ export default function Dashboard() {
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-foreground">Visão Geral</h1>
-        <p className="text-sm text-muted-foreground mt-0.5">Indicador Comercial · Abril 2026 · 01 a 11/04</p>
+        <p className="text-sm text-muted-foreground mt-0.5">Indicador Comercial · Abril 2026 ·</p>
       </div>
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
-        <KPICard title="Faturamento Total" value={fmt(totalFat)} subtitle="11 dias apurados" icon={DollarSign} color="blue" className="col-span-2 xl:col-span-2" />
+        <KPICard title="Faturamento Total" value={fmt(totalFat)} subtitle={`${diasApurados} dias apurados`} icon={DollarSign} color="blue" className="col-span-2 xl:col-span-2" />
         <KPICard title="EBITDA BWT" value={fmt(kpiGeral.ebitdaBWT)} subtitle="Frota própria" icon={TrendingUp} color="green" />
         <KPICard title="EBITDA Subcontr." value={fmt(kpiGeral.ebitdaSubcontratado)} subtitle="Terceiros" icon={TrendingUp} color="purple" />
         <KPICard title="Resultado Total" value={fmt(kpiGeral.resultadoTotal)} subtitle="EBITDA consolidado" icon={Activity} color="navy" />
@@ -77,7 +124,7 @@ export default function Dashboard() {
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
               <XAxis dataKey="dia" tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} />
-              <YAxis tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} tickFormatter={v => `${(v/1000).toFixed(0)}k`} />
+              <YAxis tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} tickFormatter={v => `${(v / 1000).toFixed(0)}k`} />
               {/* @ts-ignore */}
               <Tooltip content={<CustomTooltip />} />
               <Area type="monotone" dataKey="bwt" name="BWT" stroke="#2563EB" strokeWidth={2} fill="url(#gbwt)" />
@@ -94,7 +141,15 @@ export default function Dashboard() {
           </div>
           <ResponsiveContainer width="100%" height={180}>
             <PieChart>
-              <Pie data={ebitdaData} cx="50%" cy="50%" innerRadius={50} outerRadius={80} dataKey="value" paddingAngle={3}>
+              <Pie
+                data={ebitdaData}
+                cx="50%"
+                cy="50%"
+                innerRadius={40}
+                outerRadius={65}
+                dataKey="value"
+                paddingAngle={3}
+              >
                 {ebitdaData.map((entry, i) => (
                   <Cell key={i} fill={entry.color} />
                 ))}
@@ -133,7 +188,7 @@ export default function Dashboard() {
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-xs font-medium text-foreground truncate">{r.rota}</span>
                     <div className="flex items-center gap-2 flex-shrink-0 ml-2">
-                      <span className="text-xs text-muted-foreground">{r.viagens}v</span>
+                      <span className="text-xs text-muted-foreground">{r.viagens} viagens</span>
                       <span className="text-xs font-semibold text-foreground">{fmt(r.valorTotal)}</span>
                     </div>
                   </div>
@@ -146,26 +201,71 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Frota Quick Stats */}
+        {/* Top Clientes */}
         <div className="bg-card rounded-xl border border-border p-5">
           <div className="flex items-center gap-2 mb-4">
-            <Truck className="w-4 h-4 text-primary" />
-            <h2 className="font-semibold text-foreground text-sm">Status da Frota</h2>
+            <h2 className="font-semibold text-foreground text-sm">
+              Top 10 Clientes
+            </h2>
           </div>
-          <ResponsiveContainer width="100%" height={200}>
-            <BarChart data={frotaVeiculos.slice(0, 8)} layout="vertical" margin={{ left: 10, right: 30, top: 0, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} />
-              <XAxis type="number" tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} tickFormatter={v => `${(v/1000).toFixed(0)}k`} />
-              <YAxis type="category" dataKey="placa" tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} width={65} />
-              <Tooltip formatter={v => [`${fmtNum(v)} km`]} />
-              <Bar dataKey="kmCarregado" name="KM Carregado" fill="#2563EB" stackId="a" radius={[0,0,0,0]} />
-              <Bar dataKey="kmVazio" name="KM Vazio" fill="#93C5FD" stackId="a" radius={[0,3,3,0]} />
+
+          <ResponsiveContainer width="100%" height={220}>
+            <BarChart
+              data={topClientes}
+              layout="vertical"
+              margin={{ left: 10, right: 30, top: 0, bottom: 0 }}
+            >
+              <CartesianGrid
+                strokeDasharray="3 3"
+                stroke="hsl(var(--border))"
+                horizontal={false}
+              />
+
+              <XAxis
+                type="number"
+                tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
+                tickFormatter={(v) => `R$ ${(v / 1000).toFixed(0)}k`}
+              />
+
+              <YAxis
+                type="category"
+                dataKey="cliente"
+                tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
+                width={80}
+              />
+
+              <Tooltip
+                formatter={(v) => [`${fmt(v)}`, "Faturamento"]}
+                labelFormatter={(label) => `Cliente: ${label}`}
+              />
+
+              <Bar
+                dataKey="faturamento"
+                fill="hsl(var(--primary))"
+                radius={[0, 4, 4, 0]}
+              >
+                <LabelList
+                  dataKey="faturamento"
+                  position="right"
+                  content={(props) => {
+                    const { x, y, width, value, index } = props;
+                    const item = topClientes[index];
+
+                    return (
+                      <text
+                        x={x + width + 5}
+                        y={y + 10}
+                        fill="#374151"
+                        fontSize={10}
+                      >
+                        {`${fmt(value)} (${item?.viagens || 0})`}
+                      </text>
+                    );
+                  }}
+                />
+              </Bar>
             </BarChart>
           </ResponsiveContainer>
-          <div className="flex items-center gap-4 mt-2">
-            <div className="flex items-center gap-1.5"><div className="w-3 h-1.5 rounded bg-primary" /><span className="text-xs text-muted-foreground">Carregado</span></div>
-            <div className="flex items-center gap-1.5"><div className="w-3 h-1.5 rounded bg-blue-200" /><span className="text-xs text-muted-foreground">Vazio</span></div>
-          </div>
         </div>
       </div>
     </div>

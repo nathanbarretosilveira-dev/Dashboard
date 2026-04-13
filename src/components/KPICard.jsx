@@ -1,3 +1,4 @@
+// @ts-nocheck
 const colorStyles = {
   blue: 'bg-blue-50 text-blue-700 border-blue-100',
   green: 'bg-emerald-50 text-emerald-700 border-emerald-100',
@@ -17,8 +18,8 @@ export default function KPICard({ title, value, subtitle, icon: Icon, color = 'b
           {subtitle ? <p className="mt-1 text-xs text-muted-foreground">{subtitle}</p> : null}
         </div>
         {Icon ? (
-          <div className={`inline-flex h-8 w-8 items-center justify-center rounded-lg border ${colorStyles[color] || colorStyles.blue}`}>
-            <Icon className="h-4 w-4" />
+          <div className={`inline-flex h-8 w-8 items-center justify-center rounded-lg border relative -top-3 ${colorStyles[color] || colorStyles.blue}`}>
+            <Icon className="h-4 w-4 relative" />
           </div>
         ) : null}
       </div>
