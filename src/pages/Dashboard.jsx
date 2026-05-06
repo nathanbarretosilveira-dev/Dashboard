@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { useEffect, useMemo, useState } from 'react';
 import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
-import { DollarSign, Truck, TrendingUp, MapPin, Activity, Package } from 'lucide-react';
+import { DollarSign, Truck, TrendingUp, MapPin, Activity } from 'lucide-react';
 import KPICard from '../components/KPICard';
 import { kpiGeral as fallbackKpiGeral, faturamentoPorDia as fallbackFaturamentoPorDia, rotasRealizadas as fallbackRotasRealizadas, frotaVeiculos as fallbackFrotaVeiculos, faturamentoData as fallbackFaturamentoData } from '../lib/bwtData';
 import { LabelList } from 'recharts';
@@ -80,6 +80,29 @@ export default function Dashboard() {
     { name: "Subcontratado", value: kpiGeral.ebitdaSubcontratado, color: "#7C3AED" },
   ];
   const topRotas = rotasRealizadas.slice(0, 9);
+
+  const normalizarCliente = (nome) => {
+    if (!nome) return "";
+    const nomeUpper = String(nome).toUpperCase();
+    if (nomeUpper.includes("POTENCIAL AGRO")) return "POTENCIAL AGRO";
+    if (nomeUpper.includes("POTENCIAL")) return "POTENCIAL";
+    if (nomeUpper.includes("ROYAL FIC")) return "ROYALFIC";
+    if (nomeUpper.includes("IPIRANGA")) return "IPIRANGA";
+    if (nomeUpper.includes("PETROBRAS")) return "PETROBRAS";
+    if (nomeUpper.includes("RAIZEN")) return "RAIZEN";
+    return nomeUpper.split(" ")[0];
+  };
+
+  const topClientes = Object.values(
+    faturamentoData.reduce((acc, item) => {
+      const nome = normalizarCliente(item.tomador);
+      if (!nome) return acc;
+      if (!acc[nome]) acc[nome] = { cliente: nome, faturamento: 0, viagens: 0 };
+      acc[nome].faturamento += Number(item.valorTotal || 0);
+      acc[nome].viagens += 1;
+      return acc;
+    }, {})
+  ).sort((a, b) => b.faturamento - a.faturamento).slice(0, 10);
 
   return (
     <div className="p-4 lg:p-6 space-y-6">
