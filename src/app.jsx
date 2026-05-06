@@ -5,6 +5,7 @@ import FrotaPage from '@/pages/FrotaPage';
 import FaturamentoPage from '@/pages/FaturamentoPage';
 import TelemetriaPage from '@/pages/TelemetriaPage';
 import RotasPage from '@/pages/RotasPage';
+import ComparativoPage from '@/pages/ComparativoPage';
 
 export default function App() {
   return (
@@ -16,6 +17,7 @@ export default function App() {
           <Route path="/faturamento" element={<FaturamentoPage />} />
           <Route path="/telemetria" element={<TelemetriaPage />} />
           <Route path="/rotas" element={<RotasPage />} />
+          <Route path="/comparativo" element={<ComparativoPage />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

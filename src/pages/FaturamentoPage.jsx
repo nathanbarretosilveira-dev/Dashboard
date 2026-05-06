@@ -1,5 +1,10 @@
 import { useState } from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
+  // @ts-ignore
+  ResponsiveContainer, PieChart, Pie, Cell, Legend, LabelList
+} from 'recharts';
+// @ts-ignore
 import { FileText, Search, Building2, Weight, DollarSign } from 'lucide-react';
 import KPICard from '../components/KPICard';
 import { faturamentoData, rotasRealizadas } from '../lib/bwtData';
@@ -11,6 +16,7 @@ const fmtNum = (v) => new Intl.NumberFormat('pt-BR').format(v);
 
 const totalFat = faturamentoData.reduce((s, d) => s + d.valorTotal, 0);
 const totalPeso = faturamentoData.reduce((s, d) => s + d.peso, 0);
+const totalVolume = faturamentoData.reduce((s, d) => s + d.quantidade, 0);
 const totalPedagio = faturamentoData.reduce((s, d) => s + d.pedagio, 0);
 const bwtFat = faturamentoData.filter(d => d.empresa === 'BWT').reduce((s, d) => s + d.valorTotal, 0);
 const subFat = faturamentoData.filter(d => d.empresa === 'SUBCONTRATADO').reduce((s, d) => s + d.valorTotal, 0);
@@ -44,7 +50,7 @@ export default function FaturamentoPage() {
 
   // Filtrar por dia selecionado
   const diaAtual = diasUnicos[currentDayIndex];
-  
+
   const filtered = faturamentoData.filter(d => {
     const matchSearch = !search || d.motorista.toLowerCase().includes(search.toLowerCase()) || d.rota.toLowerCase().includes(search.toLowerCase()) || d.tomador.toLowerCase().includes(search.toLowerCase()) || d.cte.includes(search) || d.placa.toLowerCase().includes(search.toLowerCase());
     const matchEmpresa = filterEmpresa === 'Todos' || d.empresa === filterEmpresa;
@@ -68,6 +74,24 @@ export default function FaturamentoPage() {
     }
   };
 
+  // @ts-ignore
+  const CustomYAxisTick = ({ x, y, payload }) => {
+    return (
+      <g transform={`translate(${x},${y})`}>
+        <text
+          x={-10} // 👈 leve ajuste só
+          y={0}
+          dy={4}
+          textAnchor="end"
+          fill="hsl(var(--muted-foreground))"
+          fontSize={10}
+        >
+          {payload.value}
+        </text>
+      </g>
+    );
+  };
+
   return (
     <div className="p-4 lg:p-6 space-y-6">
       <div>
@@ -78,23 +102,72 @@ export default function FaturamentoPage() {
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <KPICard title="Faturamento Total" value={fmt(totalFat)} subtitle={`${faturamentoData.length} CTes emitidos`} icon={DollarSign} color="blue" />
-        <KPICard title="BWT" value={fmt(bwtFat)} subtitle={`${faturamentoData.filter(d=>d.empresa==='BWT').length} CTes`} icon={Building2} color="green" />
-        <KPICard title="Subcontratado" value={fmt(subFat)} subtitle={`${faturamentoData.filter(d=>d.empresa==='SUBCONTRATADO').length} CTes`} icon={Building2} color="purple" />
-        <KPICard title="Peso Transportado" value={`${fmtNum(totalPeso)} kg`} subtitle={`Pedágios: ${fmt(totalPedagio)}`} icon={Weight} color="amber" />
+        <KPICard title="BWT" value={fmt(bwtFat)} subtitle={`${faturamentoData.filter(d => d.empresa === 'BWT').length} CTes`} icon={Building2} color="green" />
+        <KPICard title="Subcontratado" value={fmt(subFat)} subtitle={`${faturamentoData.filter(d => d.empresa === 'SUBCONTRATADO').length} CTes`} icon={Building2} color="purple" />
+        <KPICard title="Volume Transportado" value={`${fmtNum(Math.round(totalVolume / 1000))} m³`} subtitle={`Pedágios destacadas: ${fmt(totalPedagio)}`} icon={Weight} color="amber" />
       </div>
 
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2 bg-card rounded-xl border border-border p-5">
           <h2 className="font-semibold text-foreground text-sm mb-4">Faturamento por Rota (Top 8)</h2>
-          <ResponsiveContainer width="100%" height={220}>
-            <BarChart data={rotasRealizadas.slice(0, 8)} layout="vertical" margin={{ left: 10, right: 50, top: 0, bottom: 0 }}>
+          <ResponsiveContainer width="100%" height={250}>
+            <BarChart
+              data={rotasRealizadas.slice(0, 10)}
+              layout="vertical"
+              margin={{ left: 10, right: 50, top: 0, bottom: 0 }}
+            >
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} />
-              <XAxis type="number" tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} tickFormatter={v => `${(v/1000)}k`} />
-              <YAxis type="category" dataKey="rota" tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} width={120} />
-              {/* @ts-ignore */}
-              <Tooltip content={<CustomTooltip />} />
-              <Bar dataKey="valorTotal" name="Valor Total" fill="#2563EB" radius={[0, 4, 4, 0]} />
+
+              <XAxis
+                type="number"
+                tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
+                tickFormatter={v => `${(v / 1000)}k`}
+              />
+
+              <YAxis
+                type="category"
+                dataKey="rota"
+                width={240}
+                // @ts-ignore
+                tick={<CustomYAxisTick />}
+                interval={0}
+              />
+
+              <Tooltip content={<
+                // @ts-ignore
+                CustomTooltip />} />
+
+              <Bar
+                dataKey="valorTotal"
+                name="Valor Total"
+                fill="#2563EB"
+                radius={[0, 4, 4, 0]}
+              >
+
+                <LabelList
+                  dataKey="viagens"
+                  content={({ x, y, width, height, value }) => {
+                    if (!value) return null;
+
+                    return (
+                      <text
+                        // @ts-ignore
+                        x={x + width - 6} // 👈 encosta na direita com um pequeno padding
+                        // @ts-ignore
+                        y={y + height / 2}
+                        dy={4}
+                        textAnchor="end" // 👈 alinhamento à direita
+                        fill="#FFFFFF"
+                        fontSize={11}
+                        fontWeight="600"
+                      >
+                        {`${value} viagens`}
+                      </text>
+                    );
+                  }}
+                />
+              </Bar>
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -118,7 +191,7 @@ export default function FaturamentoPage() {
                 </div>
                 <div className="text-right">
                   <p className="text-xs font-semibold text-foreground">{fmt(e.value)}</p>
-                  <p className="text-xs text-muted-foreground">{((e.value / totalFat) * 100)}%</p>
+                  <p className="text-xs text-muted-foreground">{((e.value / totalFat) * 100).toFixed(2)}%</p>
                 </div>
               </div>
             ))}
@@ -159,7 +232,7 @@ export default function FaturamentoPage() {
               <option>SUBCONTRATADO</option>
             </select>
           </div>
-          
+
           <div className="flex flex-col sm:flex-row gap-2 w-full">
             <h2 className="font-semibold text-foreground text-sm">CTes do Dia {diaAtual}</h2>
             <div className="relative flex-1 sm:w-48">
@@ -176,24 +249,24 @@ export default function FaturamentoPage() {
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-xs">
+          <table className="w-full text-xs text-center">
             <thead>
-              <tr className="bg-muted/50 text-muted-foreground uppercase tracking-wider">
-                <th className="text-left px-4 py-3 font-semibold">CTe</th>
-                <th className="text-left px-4 py-3 font-semibold">Data</th>
-                <th className="text-left px-4 py-3 font-semibold">Placa</th>
-                <th className="text-left px-4 py-3 font-semibold">Motorista</th>
-                <th className="text-left px-4 py-3 font-semibold">Rota</th>
-                <th className="text-left px-4 py-3 font-semibold">Tomador</th>
-                <th className="text-right px-4 py-3 font-semibold">Qtd (L)</th>
-                <th className="text-right px-4 py-3 font-semibold">Valor Total</th>
-                <th className="text-right px-4 py-3 font-semibold">Pedágio</th>
-                <th className="text-center px-4 py-3 font-semibold">Empresa</th>
+              <tr className="bg-muted/50 text-muted-foreground uppercase tracking-wider text-center">
+                <th className="px-4 py-3 font-semibold text-center">CTe</th>
+                <th className="px-4 py-3 font-semibold text-center">Data</th>
+                <th className="px-4 py-3 font-semibold text-center">Placa</th>
+                <th className="px-4 py-3 font-semibold text-center">Motorista</th>
+                <th className="px-4 py-3 font-semibold text-center">Rota</th>
+                <th className="px-4 py-3 font-semibold text-center">Tomador</th>
+                <th className="px-4 py-3 font-semibold text-center">Qtd (L)</th>
+                <th className="px-4 py-3 font-semibold text-center">Valor Total</th>
+                <th className="px-4 py-3 font-semibold text-center">Pedágio</th>
+                <th className="px-4 py-3 font-semibold text-center">Empresa</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
               {filtered.map((d, i) => (
-                <tr key={i} className="hover:bg-muted/30 transition-colors">
+                <tr key={i} className="hover:bg-muted/30 transition-colors text-center">
                   <td className="px-4 py-3 font-mono font-semibold text-primary">{d.cte}</td>
                   <td className="px-4 py-3 text-muted-foreground">{d.data}</td>
                   <td className="px-4 py-3 font-mono font-medium text-blue-600">{d.placa}</td>
@@ -202,9 +275,11 @@ export default function FaturamentoPage() {
                     <span className="px-2 py-0.5 bg-muted rounded-full text-xs font-medium">{d.rota}</span>
                   </td>
                   <td className="px-4 py-3 text-muted-foreground">{d.tomador}</td>
-                  <td className="px-4 py-3 text-right">{fmtNum(d.quantidade)}</td>
-                  <td className="px-4 py-3 text-right font-semibold text-foreground">{fmt(d.valorTotal)}</td>
-                  <td className="px-4 py-3 text-right text-muted-foreground">{d.pedagio > 0 ? fmt(d.pedagio) : '—'}</td>
+                  <td className="px-4 py-3 text-center">{fmtNum(d.quantidade)}</td>
+                  <td className="px-4 py-3 text-center font-semibold text-foreground">{fmt(d.valorTotal)}</td>
+                  <td className="px-4 py-3 text-center text-muted-foreground">
+                    {d.pedagio > 0 ? fmt(d.pedagio) : 'TAG'}
+                  </td>
                   <td className="px-4 py-3 text-center">
                     <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${d.empresa === 'BWT' ? 'bg-blue-50 text-blue-700' : 'bg-purple-50 text-purple-700'}`}>
                       {d.empresa}

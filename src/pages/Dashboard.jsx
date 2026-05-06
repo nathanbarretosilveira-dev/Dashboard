@@ -4,6 +4,7 @@ import { DollarSign, Truck, TrendingUp, MapPin, Activity, Package } from 'lucide
 import KPICard from '../components/KPICard';
 import { kpiGeral, faturamentoPorDia, rotasRealizadas, frotaVeiculos, faturamentoData } from '../lib/bwtData';
 import { LabelList } from 'recharts';
+import { Trophy } from 'lucide-react';
 
 // @ts-ignore
 const fmt = (v) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(v);
@@ -22,7 +23,7 @@ const ebitdaData = [
   { name: 'Subcontratado', value: kpiGeral.ebitdaSubcontratado, color: '#7C3AED' },
 ];
 
-const topRotas = rotasRealizadas.slice(0, 5);
+const topRotas = rotasRealizadas.slice(0, 9);
 
 // Normaliza nome do cliente (agrupa corretamente)
 const normalizarCliente = (nome) => {
@@ -176,11 +177,11 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Top Rotas */}
         <div className="bg-card rounded-xl border border-border p-5">
-          <div className="flex items-center gap-2 mb-4">
+          <div className="flex items-center gap-2 mb-9">
             <MapPin className="w-4 h-4 text-primary" />
             <h2 className="font-semibold text-foreground text-sm">Top Rotas Realizadas</h2>
           </div>
-          <div className="space-y-3">
+          <div className="space-y-2">
             {topRotas.map((r, i) => {
               const pct = (r.valorTotal / topRotas[0].valorTotal) * 100;
               return (
@@ -204,34 +205,39 @@ export default function Dashboard() {
         {/* Top Clientes */}
         <div className="bg-card rounded-xl border border-border p-5">
           <div className="flex items-center gap-2 mb-4">
-            <h2 className="font-semibold text-foreground text-sm">
-              Top 10 Clientes
-            </h2>
+            <div className="flex items-center gap-2 mb-4">
+              <Trophy className="w-4 h-4 text-amber-500" />
+
+              <h2 className="font-semibold text-foreground text-sm">
+                Top 10 Clientes
+              </h2>
+            </div>
           </div>
 
-          <ResponsiveContainer width="100%" height={220}>
+          <ResponsiveContainer width="100%" height={320}>
             <BarChart
               data={topClientes}
               layout="vertical"
-              margin={{ left: 10, right: 30, top: 0, bottom: 0 }}
+              margin={{ left: 0, right: 80, top: 5, bottom: 5 }}
             >
               <CartesianGrid
                 strokeDasharray="3 3"
                 stroke="hsl(var(--border))"
                 horizontal={false}
+                vertical={true}
               />
 
               <XAxis
                 type="number"
-                tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
+                tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }}
                 tickFormatter={(v) => `R$ ${(v / 1000).toFixed(0)}k`}
               />
 
               <YAxis
                 type="category"
                 dataKey="cliente"
-                tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
-                width={80}
+                tick={{ fontSize: 10, fill: "hsl(var(--foreground))" }}
+                width={110}
               />
 
               <Tooltip

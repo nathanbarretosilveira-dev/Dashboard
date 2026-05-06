@@ -8,10 +8,19 @@ import xml.etree.ElementTree as ET
 from collections import defaultdict
 from datetime import datetime, timedelta
 from pathlib import Path
+import requests
+import time
 
+# Caminho FIXO da planilha (Windows)
+XLSX_PATH = Path(r"C:\Users\NATHAN.G\OneDrive - Grupo Potencial\INDICADOR COMERCIAL\Indicador Comercial 04.2026.xlsx")
+
+# Mantém saída no projeto
 ROOT = Path(__file__).resolve().parents[1]
-XLSX_PATH = ROOT / "Indicador Comercial 04.2026.xlsx"
 OUT_PATH = ROOT / "src/lib/bwtData.js"
+
+# API Backend
+API_BASE_URL = "http://localhost:3001/api"
+API_TIMEOUT = 5
 
 NS = {
     "a": "http://schemas.openxmlformats.org/spreadsheetml/2006/main",
@@ -122,23 +131,23 @@ def build_data():
     ebitda_subcontratado = 0.0
     resultado_total = 0.0
     
-    # Linha 0: EBITDA BWT (coluna V, valor em W)
+    # Linha 0: EBITDA BWT (coluna W, valor em X)
     if len(bwt_sheet) > 0:
         row0 = bwt_sheet[0]
-        if "EBITDA BWT" in str(row0.get("V", "")):
-            ebitda_bwt = _safe_float(row0.get("W", 0))
+        if "EBITDA BWT" in str(row0.get("W", "")):
+            ebitda_bwt = _safe_float(row0.get("X", 0))
     
-    # Linha 1: EBITDA SUBCONTRATADO (coluna V, valor em W)
+    # Linha 1: EBITDA SUBCONTRATADO (coluna W, valor em X)
     if len(bwt_sheet) > 1:
         row1 = bwt_sheet[1]
-        if "EBITDA SUBCONTRATADO" in str(row1.get("V", "")):
-            ebitda_subcontratado = _safe_float(row1.get("W", 0))
+        if "EBITDA SUBCONTRATADO" in str(row1.get("W", "")):
+            ebitda_subcontratado = _safe_float(row1.get("X", 0))
     
-    # Linha 2: RESULTADO (coluna V, valor em W)
+    # Linha 2: RESULTADO (coluna W, valor em X)
     if len(bwt_sheet) > 2:
         row2 = bwt_sheet[2]
-        if "RESULTADO" in str(row2.get("V", "")):
-            resultado_total = _safe_float(row2.get("W", 0))
+        if "RESULTADO" in str(row2.get("W", "")):
+            resultado_total = _safe_float(row2.get("X", 0))
 
     bwt_rows = _rows_with_headers(sheets.get("BWT", []), 0)
     fat_rows = _rows_with_headers(sheets.get("Faturamento", []), 0)
@@ -213,6 +222,7 @@ def build_data():
     faturamento_por_dia = [
         {"dia": d, "bwt": v["bwt"], "subcontratado": v["subcontratado"], "faturamento": v["bwt"] + v["subcontratado"]}
         for d, v in sorted(fat_by_day.items(), key=lambda t: int(t[0]) if t[0].isdigit() else 99)
+        if d != "--"
     ]
 
     rota_agg = defaultdict(lambda: {"viagens": 0, "valorTotal": 0.0})
@@ -277,22 +287,115 @@ def build_data():
     return data
 
 
+def _extract_mes_ano_from_filename(path: Path):
+    """Extrai mês e ano do nome do arquivo. Ex: 'Indicador Comercial 04.2026.xlsx' -> ('04', '2026')"""
+    name = path.stem  # Remove .xlsx
+    # Procura por padrão MM.YYYY ou MM.YY no nome
+    match = re.search(r'(\d{2})\.(\d{4})', name)
+    if match:
+        mes, ano = match.groups()
+        return mes, ano
+    return None, None
+
+
+def _import_to_api(data: dict, mes: str, ano: str):
+    """Importa dados para o banco via API. Se falhar, retorna None."""
+    try:
+        print(f"Enviando dados para o banco de dados ({mes}/{ano})...")
+        payload = {
+            "mes": mes,
+            "ano": ano,
+            "kpiGeral": data["kpiGeral"],
+            "faturamentoPorDia": data["faturamentoPorDia"],
+            "rotasRealizadas": data["rotasRealizadas"],
+            "frotaVeiculos": data["frotaVeiculos"],
+            "faturamentoData": data["faturamentoData"],
+            "rotasCatalogo": data["rotasCatalogo"],
+            "telemetriaData": data["telemetriaData"],
+        }
+        
+        response = requests.post(f"{API_BASE_URL}/importar", json=payload, timeout=API_TIMEOUT)
+        
+        if response.status_code == 201:
+            print(f"✓ Dados importados com sucesso: {mes}/{ano}")
+            return True
+        elif response.status_code == 400:
+            resp_json = response.json()
+            print(f"⚠ {resp_json['error']}")
+            print(f"→ Usando dados existentes do banco de dados")
+            return False
+        else:
+            print(f"✗ Erro ao importar: {response.status_code}")
+            return None
+    except requests.exceptions.ConnectionError:
+        print(f"✗ Erro: Não foi possível conectar ao servidor em {API_BASE_URL}")
+        print(f"  Verifique se o servidor está rodando com: npm run server:dev")
+        return None
+    except Exception as e:
+        print(f"✗ Erro ao importar dados: {e}")
+        return None
+
+
+def _fetch_from_api(mes: str, ano: str):
+    """Busca dados do banco via API."""
+    try:
+        response = requests.get(f"{API_BASE_URL}/mes/{mes}/{ano}", timeout=API_TIMEOUT)
+        if response.status_code == 200:
+            return response.json()["data"]
+        else:
+            print(f"✗ Erro ao buscar dados: {response.status_code}")
+            return None
+    except Exception as e:
+        print(f"✗ Erro ao buscar dados: {e}")
+        return None
+
+
 def main():
+    # 1. Extrair dados da planilha
     data = build_data()
+    
+    # 2. Extrair mês e ano do nome do arquivo
+    mes, ano = _extract_mes_ano_from_filename(XLSX_PATH)
+    if not mes or not ano:
+        print(f"✗ Erro: Não foi possível extrair mês/ano do nome do arquivo: {XLSX_PATH.name}")
+        print(f"  Formato esperado: 'Indicador Comercial MM.YYYY.xlsx'")
+        return
+    
+    print(f"\n📊 Processando dados do mês: {mes}/{ano}")
+    print(f"📁 Arquivo: {XLSX_PATH.name}\n")
+    
+    # 3. Tentar importar para o banco
+    import_result = _import_to_api(data, mes, ano)
+    
+    # 4. Se não importou (dados já existem), buscar do banco
+    if import_result is False:
+        print(f"Buscando dados existentes do banco...")
+        data = _fetch_from_api(mes, ano)
+        if data is None:
+            print(f"✗ Erro: Não foi possível obter dados do banco")
+            return
+    elif import_result is None:
+        print(f"⚠ Aviso: Prosseguindo com dados da planilha (banco não disponível)")
+    
+    # 5. Gerar arquivo JS com os dados
+    filename = XLSX_PATH.name.replace(".xlsx", "")
     contents = (
-        "// Arquivo gerado automaticamente a partir da planilha 'Indicador Comercial 04.2026.xlsx'\n"
+        f"// Arquivo gerado automaticamente a partir da planilha '{filename}.xlsx'\n"
+        f"// Período: {mes}/{ano}\n"
+        f"// Última atualização: {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}\n"
         "// Execute: python utils/build_bwt_data.py\n\n"
-        f"export const kpiGeral = {json.dumps(data['kpiGeral'], ensure_ascii=False, indent=2)};\n\n"
-        f"export const faturamentoPorDia = {json.dumps(data['faturamentoPorDia'], ensure_ascii=False, indent=2)};\n\n"
-        f"export const rotasRealizadas = {json.dumps(data['rotasRealizadas'], ensure_ascii=False, indent=2)};\n\n"
-        f"export const frotaVeiculos = {json.dumps(data['frotaVeiculos'], ensure_ascii=False, indent=2)};\n\n"
-        f"export const faturamentoData = {json.dumps(data['faturamentoData'], ensure_ascii=False, indent=2)};\n\n"
-        f"export const rotasCatalogo = {json.dumps(data['rotasCatalogo'], ensure_ascii=False, indent=2)};\n\n"
-        f"export const telemetriaData = {json.dumps(data['telemetriaData'], ensure_ascii=False, indent=2)};\n"
+        f"export const kpiGeral = {json.dumps(data['kpiGeral'] if isinstance(data, dict) else data.get('kpiGeral', {}), ensure_ascii=False, indent=2)};\n\n"
+        f"export const faturamentoPorDia = {json.dumps(data['faturamentoPorDia'] if isinstance(data, dict) else data.get('faturamentoPorDia', []), ensure_ascii=False, indent=2)};\n\n"
+        f"export const rotasRealizadas = {json.dumps(data['rotasRealizadas'] if isinstance(data, dict) else data.get('rotasRealizadas', []), ensure_ascii=False, indent=2)};\n\n"
+        f"export const frotaVeiculos = {json.dumps(data['frotaVeiculos'] if isinstance(data, dict) else data.get('frotaVeiculos', []), ensure_ascii=False, indent=2)};\n\n"
+        f"export const faturamentoData = {json.dumps(data['faturamentoData'] if isinstance(data, dict) else data.get('faturamentoData', []), ensure_ascii=False, indent=2)};\n\n"
+        f"export const rotasCatalogo = {json.dumps(data['rotasCatalogo'] if isinstance(data, dict) else data.get('rotasCatalogo', []), ensure_ascii=False, indent=2)};\n\n"
+        f"export const telemetriaData = {json.dumps(data['telemetriaData'] if isinstance(data, dict) else data.get('telemetriaData', []), ensure_ascii=False, indent=2)};\n"
     )
     OUT_PATH.parent.mkdir(parents=True, exist_ok=True)
     OUT_PATH.write_text(contents, encoding="utf-8")
-    print(f"Dados gerados em: {OUT_PATH}")
+    print(f"\n✓ Dados gerados em: {OUT_PATH}")
+    print(f"✓ Período: {mes}/{ano}")
 
 
 if __name__ == "__main__":

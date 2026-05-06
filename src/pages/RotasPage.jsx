@@ -126,7 +126,7 @@ export default function RotasPage() {
                       </td>
                       <td className="px-4 py-3 text-right font-semibold text-foreground">{fmt(r.valorTotal)}</td>
                       <td className="px-4 py-3 text-right text-muted-foreground">{fmt(r.valorTotal / r.viagens)}</td>
-                      <td className="px-4 py-3 text-right text-muted-foreground hidden lg:table-cell">{pct}%</td>
+                      <td className="px-4 py-3 text-right text-muted-foreground hidden lg:table-cell">{pct.toFixed(2)}%</td>
                       <td className="px-4 py-3 hidden lg:table-cell">
                         <div className="w-24 h-1.5 bg-muted rounded-full overflow-hidden">
                           <div className="h-full bg-primary rounded-full" style={{ width: `${pct}%` }} />

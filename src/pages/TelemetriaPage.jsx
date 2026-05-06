@@ -2,15 +2,36 @@ import { useState } from 'react';
 import { RadarChart, Radar, PolarGrid, PolarAngleAxis, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
 import { Activity, Fuel, Clock, TrendingUp, Search } from 'lucide-react';
 import KPICard from '../components/KPICard';
-import { telemetriaData } from '../lib/bwtData';
+import { telemetriaData, frotaVeiculos } from '../lib/bwtData';
 
 // @ts-ignore
 const fmtNum = (v) => new Intl.NumberFormat('pt-BR').format(v);
 
-const avgMedia = telemetriaData.reduce((s, d) => s + d.media, 0) / telemetriaData.length;
-const avgMotorParado = telemetriaData.reduce((s, d) => s + d.motorParado, 0) / telemetriaData.length;
-const totalKm = telemetriaData.reduce((s, d) => s + d.kmRodado, 0);
-const totalLitros = telemetriaData.reduce((s, d) => s + d.litros, 0);
+const BWT_PLACAS = [
+  "AWZ2403", "BAQ0D27", "BAX9A94", "BAY4H67", "BBL9D24", "BBM5I45", "BBM5I48",
+  "BBM8G62", "BDF9C15", "BDQ4E18", "BDQ4E19", "BDQ4E21", "BDQ4E23", "BDQ4E29",
+  "BDQ4E30", "BDQ4E32", "BDQ4E34", "BDQ4E39", "BDQ4E53", "BEZ9A98", "RHG5D74",
+  "RHG5D75", "RHG5D76", "RHH5C90", "RHH5C92", "RHH5C95", "RHH5D97", "RHI3D46",
+  "RHI3D91", "SED7D20", "SEE0H97", "SEE0I05", "SEE0I13", "SEE0I16", "SEE0I38",
+  "SEE2J86", "SEE2J87", "SEE2J88", "SEE2J90", "SEE2J92", "SEE3G48", "SER3G75",
+  "SER6B09", "SEX2C71", "SEX2C73", "SEX2C75", "SEY8B40", "SEY8B43", "SFA7F70",
+  "SFA7G28", "SFC5F45", "SFC5F71", "SFC5G04", "SFF3I82", "SFF3I83", "TAW2A61",
+  "TAW2A65", "TAW2A67", "TAW8B80", "TAW8B84", "TAW8B87", "TAW8B89", "TAW8B90",
+  "TAW8C01", "TAW8C09"
+];
+
+const bwtTelemetria = telemetriaData.filter(d =>
+  BWT_PLACAS.includes(d.placa)
+);
+
+const bwtFaturamento = frotaVeiculos.filter(d =>
+  BWT_PLACAS.includes(d.placa)
+);
+
+const avgMedia = bwtTelemetria.reduce((s, d) => s + d.media, 0) / bwtTelemetria.length;
+const avgMotorParado = bwtTelemetria.reduce((s, d) => s + d.motorParado, 0) / bwtTelemetria.length;
+const totalKm = bwtFaturamento.reduce((s, d) => s + (d.hodometro ?? 0), 0);
+const totalLitros = bwtTelemetria.reduce((s, d) => s + d.litros, 0);
 
 const faixaColors = {
   faixaVerde: '#10B981',
@@ -59,8 +80,10 @@ const CustomTooltip = ({ active, payload, label }) => {
 export default function TelemetriaPage() {
   const [search, setSearch] = useState('');
 
-  const filtered = telemetriaData.filter(d =>
-    !search || d.motorista.toLowerCase().includes(search.toLowerCase()) || d.placa.toLowerCase().includes(search.toLowerCase())
+  const filtered = bwtTelemetria.filter(d =>
+    !search ||
+    d.motorista.toLowerCase().includes(search.toLowerCase()) ||
+    d.placa.toLowerCase().includes(search.toLowerCase())
   );
 
   return (
@@ -72,10 +95,10 @@ export default function TelemetriaPage() {
 
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <KPICard title="KM Total Rastreado" value={fmtNum(totalKm)} subtitle={`${telemetriaData.length} veículos`} icon={Activity} color="blue" />
+        <KPICard title="KM Total Rastreado" value={fmtNum(totalKm)} subtitle={`${bwtTelemetria.length} veículos`} icon={Activity} color="blue" />
         <KPICard title="Média Frota km/L" value={avgMedia.toFixed(2)} subtitle="Consumo médio" icon={Fuel} color="green" />
         <KPICard title="Combustível Total" value={`${fmtNum(totalLitros)} L`} subtitle="Consumo total" icon={Fuel} color="amber" />
-        <KPICard title="Motor Parado (Média)" value={`${avgMotorParado}h`} subtitle="Por veículo" icon={Clock} color="red" />
+        <KPICard title="Motor Parado (Média)" value={`${avgMotorParado.toFixed(2)}h`} subtitle="Por veículo" icon={Clock} color="red" />
       </div>
 
       {/* Faixa chart */}
@@ -116,7 +139,7 @@ export default function TelemetriaPage() {
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
             <input
               type="text"
-              placeholder="Buscar motorista..."
+              placeholder="Buscar..."
               value={search}
               onChange={e => setSearch(e.target.value)}
               className="w-full pl-8 pr-3 py-2 text-xs border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-primary"

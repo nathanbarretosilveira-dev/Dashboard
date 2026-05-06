@@ -4,14 +4,20 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "concurrently \"npm run server:dev\" \"vite\"",
+    "server": "node server/index.js",
+    "server:dev": "node --watch server/index.js",
     "build": "vite build",
     "preview": "vite preview",
     "lint": "eslint .",
-    "data:build": "python utils/build_bwt_data.py"
+    "data:build": "python utils/build_bwt_data.py",
+    "data:import": "python utils/build_bwt_data.py"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.90.2",
+    "sqlite3": "^5.1.6",
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
     "lucide-react": "^0.542.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
@@ -19,6 +25,7 @@
     "recharts": "^2.15.4"
   },
   "devDependencies": {
+    "concurrently": "^8.2.2",
     "@eslint/js": "^9.39.0",
     "@vitejs/plugin-react": "^4.7.0",
     "autoprefixer": "^10.4.21",
