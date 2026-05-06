@@ -1,9 +1,9 @@
 // @ts-nocheck
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 import { DollarSign, Truck, TrendingUp, MapPin, Activity } from 'lucide-react';
 import KPICard from '../components/KPICard';
-import { kpiGeral as fallbackKpiGeral, faturamentoPorDia as fallbackFaturamentoPorDia, rotasRealizadas as fallbackRotasRealizadas, frotaVeiculos as fallbackFrotaVeiculos, faturamentoData as fallbackFaturamentoData } from '../lib/bwtData';
+import { useMonthData } from '../lib/MonthDataContext';
 import { LabelList } from 'recharts';
 import { Trophy } from 'lucide-react';
 
@@ -29,42 +29,9 @@ const CustomTooltip = ({ active, payload, label }) => {
 };
 
 export default function Dashboard() {
-  const [meses, setMeses] = useState([]);
-  const [selectedMesId, setSelectedMesId] = useState("");
-  const [data, setData] = useState({kpiGeral: fallbackKpiGeral, faturamentoPorDia: fallbackFaturamentoPorDia, rotasRealizadas: fallbackRotasRealizadas, frotaVeiculos: fallbackFrotaVeiculos, faturamentoData: fallbackFaturamentoData});
+  const { meses, selectedMesId, setSelectedMesId, periodoLabel, data } = useMonthData();
 
-  useEffect(() => {
-    (async () => {
-      try {
-        const resp = await fetch("http://localhost:3001/api/meses");
-        const result = await resp.json();
-        if (result?.success && result.data?.length) {
-          setMeses(result.data);
-          setSelectedMesId(String(result.data[0].id));
-        }
-      } catch {}
-    })();
-  }, []);
-
-  useEffect(() => {
-    const selected = meses.find((m) => String(m.id) === String(selectedMesId));
-    if (!selected) return;
-    (async () => {
-      try {
-        const resp = await fetch(`http://localhost:3001/api/mes/${selected.mes}/${selected.ano}`);
-        const result = await resp.json();
-        if (result?.success && result?.data) setData(result.data);
-      } catch {}
-    })();
-  }, [meses, selectedMesId]);
-
-  const periodoLabel = useMemo(() => {
-    const selected = meses.find((m) => String(m.id) === String(selectedMesId));
-    if (!selected) return "Mês atual";
-    return `${monthNames[Number(selected.mes)-1] || selected.mes} ${selected.ano}`;
-  }, [meses, selectedMesId]);
-
-  const kpiGeral = data.kpiGeral || fallbackKpiGeral;
+  const kpiGeral = data.kpiGeral || {};
   const faturamentoPorDia = data.faturamentoPorDia || [];
   const rotasRealizadas = data.rotasRealizadas || [];
   const frotaVeiculos = data.frotaVeiculos || [];
