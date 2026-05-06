@@ -23,7 +23,7 @@ OUT_PATH = ROOT / "src/lib/bwtData.js"
 
 # API Backend
 API_BASE_URL = "http://localhost:3001/api"
-API_TIMEOUT = 5
+API_TIMEOUT = 60
 
 NS = {
     "a": "http://schemas.openxmlformats.org/spreadsheetml/2006/main",
@@ -318,10 +318,14 @@ def _import_to_api(data: dict, mes: str, ano: str):
             "sobrescrever": True,
         }
         
-        response = requests.post(f"{API_BASE_URL}/importar", json=payload, timeout=API_TIMEOUT)
+        response = requests.post(f"{API_BASE_URL}/importar", json=payload, timeout=(10, API_TIMEOUT))
         
-        if response.status_code == 201:
-            print(f"✓ Dados importados com sucesso: {mes}/{ano}")
+        if response.status_code in (200, 201):
+            resp_json = response.json()
+            if resp_json.get("data", {}).get("sobrescrito"):
+                print(f"✓ Dados atualizados com sucesso: {mes}/{ano}")
+            else:
+                print(f"✓ Dados importados com sucesso: {mes}/{ano}")
             return True
         elif response.status_code == 400:
             resp_json = response.json()
