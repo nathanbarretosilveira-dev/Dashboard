@@ -79,7 +79,7 @@ router.get('/mes/:mes/:ano', async (req, res) => {
 // POST /api/importar - Importar dados de um mês (chamado pelo Python)
 router.post('/importar', async (req, res) => {
   try {
-    const { mes, ano, kpiGeral, faturamentoPorDia, rotasRealizadas, frotaVeiculos, faturamentoData, rotasCatalogo, telemetriaData } = req.body;
+    const { mes, ano, kpiGeral, faturamentoPorDia, rotasRealizadas, frotaVeiculos, faturamentoData, rotasCatalogo, telemetriaData, sobrescrever } = req.body;
 
     if (!mes || !ano) {
       return res.status(400).json(formatResponse(null, 'mes e ano são obrigatórios'));
@@ -90,17 +90,41 @@ router.post('/importar', async (req, res) => {
       SELECT id FROM monthly_data WHERE mes = ? AND ano = ?
     `, [mes, ano]);
 
-    if (existing) {
+    // Inserir monthly_data
+    if (existing && !sobrescrever) {
       return res.status(400).json(formatResponse(null, `Dados do mês ${mes}/${ano} já existem no banco`));
     }
 
-    // Inserir monthly_data
-    const result = await dbRun(`
-      INSERT INTO monthly_data (mes, ano, kpi_geral_ebitda_bwt, kpi_geral_ebitda_subcontratado, kpi_geral_resultado_total, data_completa)
-      VALUES (?, ?, ?, ?, ?, ?)
-    `, [mes, ano, kpiGeral.ebitdaBWT, kpiGeral.ebitdaSubcontratado, kpiGeral.resultadoTotal, JSON.stringify({ kpiGeral, faturamentoPorDia, rotasRealizadas, frotaVeiculos, faturamentoData, rotasCatalogo, telemetriaData })]);
+    let monthlyDataId = existing?.id;
 
-    const monthlyDataId = result.lastID;
+    if (existing && sobrescrever) {
+      await dbRun(`DELETE FROM faturamento_por_dia WHERE monthly_data_id = ?`, [monthlyDataId]);
+      await dbRun(`DELETE FROM rotas_realizadas WHERE monthly_data_id = ?`, [monthlyDataId]);
+      await dbRun(`DELETE FROM frota_veiculos WHERE monthly_data_id = ?`, [monthlyDataId]);
+      await dbRun(`DELETE FROM faturamento_data WHERE monthly_data_id = ?`, [monthlyDataId]);
+      await dbRun(`DELETE FROM rotas_catalogo WHERE monthly_data_id = ?`, [monthlyDataId]);
+      await dbRun(`DELETE FROM telemetria_data WHERE monthly_data_id = ?`, [monthlyDataId]);
+
+      await dbRun(`
+        UPDATE monthly_data
+        SET kpi_geral_ebitda_bwt = ?,
+            kpi_geral_ebitda_subcontratado = ?,
+            kpi_geral_resultado_total = ?,
+            data_completa = ?,
+            data_importacao = CURRENT_TIMESTAMP
+        WHERE id = ?
+      `, [kpiGeral.ebitdaBWT, kpiGeral.ebitdaSubcontratado, kpiGeral.resultadoTotal, JSON.stringify({ kpiGeral, faturamentoPorDia, rotasRealizadas, frotaVeiculos, faturamentoData, rotasCatalogo, telemetriaData }), monthlyDataId]);
+    }
+
+    if (!existing) {
+
+      const result = await dbRun(`
+        INSERT INTO monthly_data (mes, ano, kpi_geral_ebitda_bwt, kpi_geral_ebitda_subcontratado, kpi_geral_resultado_total, data_completa)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `, [mes, ano, kpiGeral.ebitdaBWT, kpiGeral.ebitdaSubcontratado, kpiGeral.resultadoTotal, JSON.stringify({ kpiGeral, faturamentoPorDia, rotasRealizadas, frotaVeiculos, faturamentoData, rotasCatalogo, telemetriaData })]);
+
+      monthlyDataId = result.lastID;
+    }
 
     // Inserir faturamento por dia
     for (const item of faturamentoPorDia) {
@@ -150,7 +174,7 @@ router.post('/importar', async (req, res) => {
       `, [monthlyDataId, item.motorista, item.placa, item.kmRodado, item.litros, item.media, item.motorParado, item.faixaVerde, item.faixaAzul, item.faixaAmarela, item.faixaVermelha]);
     }
 
-    res.status(201).json(formatResponse({ id: monthlyDataId, mes, ano }, null));
+    res.status(existing && sobrescrever ? 200 : 201).json(formatResponse({ id: monthlyDataId, mes, ano, sobrescrito: !!(existing && sobrescrever) }, null));
   } catch (error) {
     res.status(500).json(formatResponse(null, error.message));
   }
