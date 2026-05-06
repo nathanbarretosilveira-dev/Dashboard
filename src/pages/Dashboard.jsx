@@ -193,7 +193,8 @@ export default function Dashboard() {
           </div>
           <div className="space-y-2">
             {topRotas.map((r, i) => {
-              const pct = (r.valorTotal / topRotas[0].valorTotal) * 100;
+              const base = topRotas[0]?.valorTotal || 1;
+              const pct = (r.valorTotal / base) * 100;
               return (
                 <div key={i}>
                   <div className="flex items-center justify-between mb-1">
