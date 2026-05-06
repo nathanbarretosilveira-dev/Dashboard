@@ -1,8 +1,9 @@
 // @ts-nocheck
+import { useMemo } from 'react';
 import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
-import { DollarSign, Truck, TrendingUp, MapPin, Activity, Package } from 'lucide-react';
+import { DollarSign, Truck, TrendingUp, MapPin, Activity } from 'lucide-react';
 import KPICard from '../components/KPICard';
-import { kpiGeral, faturamentoPorDia, rotasRealizadas, frotaVeiculos, faturamentoData } from '../lib/bwtData';
+import { useMonthData } from '../lib/MonthDataContext';
 import { LabelList } from 'recharts';
 import { Trophy } from 'lucide-react';
 
@@ -11,66 +12,21 @@ const fmt = (v) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency:
 // @ts-ignore
 const fmtNum = (v) => new Intl.NumberFormat('pt-BR').format(v);
 
-const totalFat = faturamentoPorDia.reduce((s, d) => s + d.faturamento, 0);
-const totalKm = frotaVeiculos.reduce((s, v) => s + v.hodometro, 0);
-const totalLitros = frotaVeiculos.reduce((s, v) => s + v.litros, 0);
-const mediaKmL = totalKm / totalLitros;
-
-const diasApurados = faturamentoPorDia.length;
-
-const ebitdaData = [
-  { name: 'BWT', value: kpiGeral.ebitdaBWT, color: '#2563EB' },
-  { name: 'Subcontratado', value: kpiGeral.ebitdaSubcontratado, color: '#7C3AED' },
-];
-
-const topRotas = rotasRealizadas.slice(0, 9);
-
-// Normaliza nome do cliente (agrupa corretamente)
-const normalizarCliente = (nome) => {
-  if (!nome) return "";
-
-  const nomeUpper = nome.toUpperCase();
-
-  // ⚠️ ORDEM IMPORTA
-  if (nomeUpper.includes("POTENCIAL AGRO")) return "POTENCIAL AGRO";
-  if (nomeUpper.includes("POTENCIAL")) return "POTENCIAL";
-
-  if (nomeUpper.includes("ROYAL FIC")) return "ROYALFIC";
-
-  if (nomeUpper.includes("IPIRANGA")) return "IPIRANGA";
-  if (nomeUpper.includes("PETROBRAS")) return "PETROBRAS";
-  if (nomeUpper.includes("RAIZEN")) return "RAIZEN";
-
-  return nomeUpper.split(" ")[0];
-};
-
-// Top 10 Clientes
-const topClientes = Object.values(
-  faturamentoData.reduce((acc, item) => {
-    const nome = normalizarCliente(item.tomador);
-
-    if (!nome) return acc;
-
-    if (!acc[nome]) {
-      acc[nome] = {
-        cliente: nome,
-        faturamento: 0,
-        viagens: 0,
-      };
-    }
-
-    acc[nome].faturamento += Number(item.valorTotal || 0);
-    acc[nome].viagens += 1;
-
-    return acc;
-  }, {})
-)
-  .sort((a, b) => b.faturamento - a.faturamento)
-  .slice(0, 10);
+const monthNames = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 
 // @ts-ignore
 const CustomTooltip = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null;
+  const hasData = faturamentoPorDia.length || frotaVeiculos.length || rotasRealizadas.length || faturamentoData.length;
+  if (!hasData) {
+    return (
+      <div className="p-4 lg:p-6">
+        <h1 className="text-2xl font-bold text-foreground">Visão Geral</h1>
+        <p className="text-sm text-muted-foreground mt-2">Sem dados para este mês selecionado.</p>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-card border border-border rounded-lg shadow-lg p-3 text-xs">
       <p className="font-semibold text-foreground mb-1">{label}</p>
@@ -83,12 +39,66 @@ const CustomTooltip = ({ active, payload, label }) => {
 };
 
 export default function Dashboard() {
+  const { meses, selectedMesId, setSelectedMesId, periodoLabel, data } = useMonthData();
+
+  const kpiGeral = data.kpiGeral || {};
+  const faturamentoPorDia = data.faturamentoPorDia || [];
+  const rotasRealizadas = data.rotasRealizadas || [];
+  const frotaVeiculos = data.frotaVeiculos || [];
+  const faturamentoData = data.faturamentoData || [];
+
+  const totalFat = faturamentoPorDia.reduce((s, d) => s + d.faturamento, 0);
+  const totalKm = frotaVeiculos.reduce((s, v) => s + v.hodometro, 0);
+  const totalLitros = frotaVeiculos.reduce((s, v) => s + v.litros, 0);
+  const mediaKmL = totalLitros ? totalKm / totalLitros : 0;
+  const diasApurados = faturamentoPorDia.length;
+  const ebitdaData = [
+    { name: "BWT", value: kpiGeral.ebitdaBWT, color: "#2563EB" },
+    { name: "Subcontratado", value: kpiGeral.ebitdaSubcontratado, color: "#7C3AED" },
+  ];
+  const topRotas = rotasRealizadas.slice(0, 9);
+
+  const normalizarCliente = (nome) => {
+    if (!nome) return "";
+    const nomeUpper = String(nome).toUpperCase();
+    if (nomeUpper.includes("POTENCIAL AGRO")) return "POTENCIAL AGRO";
+    if (nomeUpper.includes("POTENCIAL")) return "POTENCIAL";
+    if (nomeUpper.includes("ROYAL FIC")) return "ROYALFIC";
+    if (nomeUpper.includes("IPIRANGA")) return "IPIRANGA";
+    if (nomeUpper.includes("PETROBRAS")) return "PETROBRAS";
+    if (nomeUpper.includes("RAIZEN")) return "RAIZEN";
+    return nomeUpper.split(" ")[0];
+  };
+
+  const topClientes = Object.values(
+    faturamentoData.reduce((acc, item) => {
+      const nome = normalizarCliente(item.tomador);
+      if (!nome) return acc;
+      if (!acc[nome]) acc[nome] = { cliente: nome, faturamento: 0, viagens: 0 };
+      acc[nome].faturamento += Number(item.valorTotal || 0);
+      acc[nome].viagens += 1;
+      return acc;
+    }, {})
+  ).sort((a, b) => b.faturamento - a.faturamento).slice(0, 10);
+
   return (
     <div className="p-4 lg:p-6 space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Visão Geral</h1>
-        <p className="text-sm text-muted-foreground mt-0.5">Indicador Comercial · Abril 2026 ·</p>
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Visão Geral</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">Indicador Comercial · {periodoLabel} ·</p>
+        </div>
+        {meses.length > 0 && (
+          <div className="w-full lg:w-64">
+            <label className="text-xs text-muted-foreground">Selecionar mês</label>
+            <select value={selectedMesId} onChange={(e) => setSelectedMesId(e.target.value)} className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm">
+              {meses.map((m) => (
+                <option key={m.id} value={m.id}>{m.mes}/{m.ano}</option>
+              ))}
+            </select>
+          </div>
+        )}
       </div>
 
       {/* KPI Cards */}
@@ -109,7 +119,7 @@ export default function Dashboard() {
               <h2 className="font-semibold text-foreground text-sm">Faturamento Diário</h2>
               <p className="text-xs text-muted-foreground">BWT vs Subcontratado</p>
             </div>
-            <span className="text-xs bg-primary/10 text-primary font-medium px-2 py-1 rounded-full">Abr/2026</span>
+            <span className="text-xs bg-primary/10 text-primary font-medium px-2 py-1 rounded-full">{periodoLabel}</span>
           </div>
           <ResponsiveContainer width="100%" height={220}>
             <AreaChart data={faturamentoPorDia} margin={{ top: 5, right: 5, bottom: 0, left: 0 }}>
@@ -183,7 +193,8 @@ export default function Dashboard() {
           </div>
           <div className="space-y-2">
             {topRotas.map((r, i) => {
-              const pct = (r.valorTotal / topRotas[0].valorTotal) * 100;
+              const base = topRotas[0]?.valorTotal || 1;
+              const pct = (r.valorTotal / base) * 100;
               return (
                 <div key={i}>
                   <div className="flex items-center justify-between mb-1">
