@@ -296,10 +296,11 @@ def _extract_mes_ano_from_filename(path: Path):
     return None, None
 
 
-def _import_to_api(data: dict, mes: str, ano: str):
+def _import_to_api(data: dict, mes: str, ano: str, sobrescrever: bool):
     """Importa dados para o banco via API. Se falhar, retorna None."""
     try:
-        print(f"Enviando dados para o banco de dados ({mes}/{ano})...")
+        mode = "atualização" if sobrescrever else "preservação"
+        print(f"Enviando dados para o banco de dados ({mes}/{ano}) [{mode}]...")
         payload = {
             "mes": mes,
             "ano": ano,
@@ -310,7 +311,7 @@ def _import_to_api(data: dict, mes: str, ano: str):
             "faturamentoData": data["faturamentoData"],
             "rotasCatalogo": data["rotasCatalogo"],
             "telemetriaData": data["telemetriaData"],
-            "sobrescrever": True,
+            "sobrescrever": sobrescrever,
         }
         
         response = requests.post(f"{API_BASE_URL}/importar", json=payload, timeout=(10, API_TIMEOUT))
@@ -363,22 +364,28 @@ def main():
     latest_ano = None
     latest_path = None
 
-    for xlsx_path in XLSX_PATHS:
-        # 1. Extrair dados da planilha
-        data = build_data(xlsx_path)
 
-        # 2. Extrair mês e ano do nome do arquivo
+    periodos = []
+    for xlsx_path in XLSX_PATHS:
         mes, ano = _extract_mes_ano_from_filename(xlsx_path)
         if not mes or not ano:
             print(f"✗ Erro: Não foi possível extrair mês/ano do nome do arquivo: {xlsx_path.name}")
             print("  Formato esperado: 'Indicador Comercial MM.YYYY.xlsx'")
             return
+        periodos.append((int(ano), int(mes), xlsx_path, mes, ano))
+
+    ano_max, mes_max, _, _, _ = max(periodos, key=lambda x: (x[0], x[1]))
+
+    for _, _, xlsx_path, mes, ano in periodos:
+        # 1. Extrair dados da planilha
+        data = build_data(xlsx_path)
 
         print(f"\n📊 Processando dados do mês: {mes}/{ano}")
         print(f"📁 Arquivo: {xlsx_path.name}\n")
 
         # 3. Tentar importar para o banco
-        import_result = _import_to_api(data, mes, ano)
+        sobrescrever = int(ano) == ano_max and int(mes) == mes_max
+        import_result = _import_to_api(data, mes, ano, sobrescrever)
 
         # 4. Se não importou (dados já existem), buscar do banco
         if import_result is False:
