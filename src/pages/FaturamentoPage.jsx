@@ -7,24 +7,12 @@ import {
 // @ts-ignore
 import { FileText, Search, Building2, Weight, DollarSign } from 'lucide-react';
 import KPICard from '../components/KPICard';
-import { faturamentoData, rotasRealizadas } from '../lib/bwtData';
+import { useMonthData } from '../lib/MonthDataContext';
 
 // @ts-ignore
 const fmt = (v) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(v);
 // @ts-ignore
 const fmtNum = (v) => new Intl.NumberFormat('pt-BR').format(v);
-
-const totalFat = faturamentoData.reduce((s, d) => s + d.valorTotal, 0);
-const totalPeso = faturamentoData.reduce((s, d) => s + d.peso, 0);
-const totalVolume = faturamentoData.reduce((s, d) => s + d.quantidade, 0);
-const totalPedagio = faturamentoData.reduce((s, d) => s + d.pedagio, 0);
-const bwtFat = faturamentoData.filter(d => d.empresa === 'BWT').reduce((s, d) => s + d.valorTotal, 0);
-const subFat = faturamentoData.filter(d => d.empresa === 'SUBCONTRATADO').reduce((s, d) => s + d.valorTotal, 0);
-
-const empresaPie = [
-  { name: 'BWT', value: bwtFat, color: '#2563EB' },
-  { name: 'Subcontratado', value: subFat, color: '#7C3AED' },
-];
 
 // @ts-ignore
 const CustomTooltip = ({ active, payload, label }) => {
@@ -41,20 +29,30 @@ const CustomTooltip = ({ active, payload, label }) => {
 };
 
 export default function FaturamentoPage() {
+  const { data, periodoLabel } = useMonthData();
+  const faturamentoData = data.faturamentoData || [];
+  const rotasRealizadas = data.rotasRealizadas || [];
+  const totalFat = faturamentoData.reduce((s, d) => s + (d.valorTotal || 0), 0);
+  const totalVolume = faturamentoData.reduce((s, d) => s + (d.quantidade || 0), 0);
+  const totalPedagio = faturamentoData.reduce((s, d) => s + (d.pedagio || 0), 0);
+  const bwtFat = faturamentoData.filter(d => d.empresa === "BWT").reduce((s, d) => s + (d.valorTotal || 0), 0);
+  const subFat = faturamentoData.filter(d => d.empresa === "SUBCONTRATADO").reduce((s, d) => s + (d.valorTotal || 0), 0);
+  const empresaPie = [{ name: "BWT", value: bwtFat, color: "#2563EB" },{ name: "Subcontratado", value: subFat, color: "#7C3AED" }];
   const [search, setSearch] = useState('');
   const [filterEmpresa, setFilterEmpresa] = useState('Todos');
   const [currentDayIndex, setCurrentDayIndex] = useState(0);
 
   // Extrair dias únicos dos dados
-  const diasUnicos = [...new Set(faturamentoData.map(d => d.data.split('/')[0]))].sort((a, b) => parseInt(a) - parseInt(b));
+  const diasUnicos = [...new Set(faturamentoData.map(d => String(d.data || '').split('/')[0]).filter(Boolean))].sort((a, b) => parseInt(a) - parseInt(b));
 
   // Filtrar por dia selecionado
-  const diaAtual = diasUnicos[currentDayIndex];
+  const diaAtual = diasUnicos[currentDayIndex] || '';
 
   const filtered = faturamentoData.filter(d => {
-    const matchSearch = !search || d.motorista.toLowerCase().includes(search.toLowerCase()) || d.rota.toLowerCase().includes(search.toLowerCase()) || d.tomador.toLowerCase().includes(search.toLowerCase()) || d.cte.includes(search) || d.placa.toLowerCase().includes(search.toLowerCase());
+    const searchTerm = search.toLowerCase();
+    const matchSearch = !search || String(d.motorista || '').toLowerCase().includes(searchTerm) || String(d.rota || '').toLowerCase().includes(searchTerm) || String(d.tomador || '').toLowerCase().includes(searchTerm) || String(d.cte || '').includes(search) || String(d.placa || '').toLowerCase().includes(searchTerm);
     const matchEmpresa = filterEmpresa === 'Todos' || d.empresa === filterEmpresa;
-    const dia = d.data.split('/')[0];
+    const dia = String(d.data || '').split('/')[0];
     const matchDia = dia === diaAtual;
     return matchSearch && matchEmpresa && matchDia;
   });
@@ -96,7 +94,7 @@ export default function FaturamentoPage() {
     <div className="p-4 lg:p-6 space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-foreground">Faturamento</h1>
-        <p className="text-sm text-muted-foreground mt-0.5">Conhecimentos de transporte emitidos · Abril 2026</p>
+        <p className="text-sm text-muted-foreground mt-0.5">Conhecimentos de transporte emitidos · {periodoLabel}</p>
       </div>
 
       {/* KPIs */}

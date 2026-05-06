@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { RadarChart, Radar, PolarGrid, PolarAngleAxis, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
 import { Activity, Fuel, Clock, TrendingUp, Search } from 'lucide-react';
 import KPICard from '../components/KPICard';
-import { telemetriaData, frotaVeiculos } from '../lib/bwtData';
+import { useMonthData } from '../lib/MonthDataContext';
 
 // @ts-ignore
 const fmtNum = (v) => new Intl.NumberFormat('pt-BR').format(v);
@@ -19,19 +19,6 @@ const BWT_PLACAS = [
   "TAW2A65", "TAW2A67", "TAW8B80", "TAW8B84", "TAW8B87", "TAW8B89", "TAW8B90",
   "TAW8C01", "TAW8C09"
 ];
-
-const bwtTelemetria = telemetriaData.filter(d =>
-  BWT_PLACAS.includes(d.placa)
-);
-
-const bwtFaturamento = frotaVeiculos.filter(d =>
-  BWT_PLACAS.includes(d.placa)
-);
-
-const avgMedia = bwtTelemetria.reduce((s, d) => s + d.media, 0) / bwtTelemetria.length;
-const avgMotorParado = bwtTelemetria.reduce((s, d) => s + d.motorParado, 0) / bwtTelemetria.length;
-const totalKm = bwtFaturamento.reduce((s, d) => s + (d.hodometro ?? 0), 0);
-const totalLitros = bwtTelemetria.reduce((s, d) => s + d.litros, 0);
 
 const faixaColors = {
   faixaVerde: '#10B981',
@@ -55,14 +42,6 @@ const mediaScore = (m) => {
   return { label: 'Baixo', color: 'text-red-600 bg-red-50' };
 };
 
-const faixaChart = telemetriaData.slice(0, 10).map(d => ({
-  name: d.motorista.split(' ')[0],
-  verde: d.faixaVerde,
-  azul: d.faixaAzul,
-  amarela: d.faixaAmarela,
-  vermelha: d.faixaVermelha,
-}));
-
 // @ts-ignore
 const CustomTooltip = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null;
@@ -78,19 +57,29 @@ const CustomTooltip = ({ active, payload, label }) => {
 };
 
 export default function TelemetriaPage() {
+  const { data, periodoLabel } = useMonthData();
+  const telemetriaData = data.telemetriaData || [];
+  const frotaVeiculos = data.frotaVeiculos || [];
+  const bwtTelemetria = telemetriaData.filter(d => BWT_PLACAS.includes(d.placa));
+  const bwtFaturamento = frotaVeiculos.filter(d => BWT_PLACAS.includes(d.placa));
+  const avgMedia = bwtTelemetria.length ? bwtTelemetria.reduce((s, d) => s + (d.media || 0), 0) / bwtTelemetria.length : 0;
+  const avgMotorParado = bwtTelemetria.length ? bwtTelemetria.reduce((s, d) => s + (d.motorParado || 0), 0) / bwtTelemetria.length : 0;
+  const totalKm = bwtFaturamento.reduce((s, d) => s + (d.hodometro ?? 0), 0);
+  const totalLitros = bwtTelemetria.reduce((s, d) => s + (d.litros || 0), 0);
+  const faixaChart = bwtTelemetria.slice(0, 10).map(d => ({ name: (d.motorista || "").split(" ")[0], verde: d.faixaVerde, azul: d.faixaAzul, amarela: d.faixaAmarela, vermelha: d.faixaVermelha }));
   const [search, setSearch] = useState('');
 
   const filtered = bwtTelemetria.filter(d =>
     !search ||
-    d.motorista.toLowerCase().includes(search.toLowerCase()) ||
-    d.placa.toLowerCase().includes(search.toLowerCase())
+    String(d.motorista || '').toLowerCase().includes(search.toLowerCase()) ||
+    String(d.placa || '').toLowerCase().includes(search.toLowerCase())
   );
 
   return (
     <div className="p-4 lg:p-6 space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-foreground">Telemetria Sighra</h1>
-        <p className="text-sm text-muted-foreground mt-0.5">Desempenho de condutores e eficiência de frota · Abril 2026</p>
+        <p className="text-sm text-muted-foreground mt-0.5">Desempenho de condutores e eficiência de frota · {periodoLabel}</p>
       </div>
 
       {/* KPIs */}

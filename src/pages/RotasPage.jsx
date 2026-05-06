@@ -2,17 +2,12 @@ import { useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { MapPin, Search, Route, TrendingUp, DollarSign } from 'lucide-react';
 import KPICard from '../components/KPICard';
-import { rotasCatalogo, rotasRealizadas } from '../lib/bwtData';
+import { useMonthData } from '../lib/MonthDataContext';
 
 // @ts-ignore
 const fmt = (v) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(v);
 // @ts-ignore
 const fmtNum = (v) => new Intl.NumberFormat('pt-BR').format(v);
-
-const totalViagens = rotasRealizadas.reduce((s, r) => s + r.viagens, 0);
-const totalReceita = rotasRealizadas.reduce((s, r) => s + r.valorTotal, 0);
-const mediaValorViagem = totalReceita / totalViagens;
-const totalPedagios = rotasCatalogo.reduce((s, r) => s + r.valorPedagios, 0);
 
 // @ts-ignore
 const CustomTooltip = ({ active, payload, label }) => {
@@ -29,23 +24,29 @@ const CustomTooltip = ({ active, payload, label }) => {
 };
 
 export default function RotasPage() {
+  const { data, periodoLabel } = useMonthData();
+  const rotasCatalogo = data.rotasCatalogo || [];
+  const rotasRealizadas = data.rotasRealizadas || [];
+  const totalViagens = rotasRealizadas.reduce((s, r) => s + (r.viagens || 0), 0);
+  const totalReceita = rotasRealizadas.reduce((s, r) => s + (r.valorTotal || 0), 0);
+  const mediaValorViagem = totalViagens ? totalReceita / totalViagens : 0;
   const [search, setSearch] = useState('');
   const [tab, setTab] = useState('realizadas');
 
   const filteredRealizadas = rotasRealizadas.filter(r =>
-    !search || r.rota.toLowerCase().includes(search.toLowerCase())
+    !search || String(r.rota || '').toLowerCase().includes(search.toLowerCase())
   );
   const filteredCatalogo = rotasCatalogo.filter(r =>
-    !search || r.rota.toLowerCase().includes(search.toLowerCase()) || r.origem.toLowerCase().includes(search.toLowerCase()) || r.destino.toLowerCase().includes(search.toLowerCase())
+    !search || String(r.rota || '').toLowerCase().includes(search.toLowerCase()) || String(r.origem || '').toLowerCase().includes(search.toLowerCase()) || String(r.destino || '').toLowerCase().includes(search.toLowerCase())
   );
 
-  const kmData = rotasCatalogo.map(r => ({ rota: r.rota.split('/')[1] || r.rota, km: r.km, pedagio: r.valorPedagios }));
+  const kmData = rotasCatalogo.map(r => ({ rota: String(r.rota || '').split('/')[1] || r.rota, km: r.km, pedagio: r.valorPedagios }));
 
   return (
     <div className="p-4 lg:p-6 space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-foreground">Rotas</h1>
-        <p className="text-sm text-muted-foreground mt-0.5">Rotas realizadas e catálogo de rotas homologadas</p>
+        <p className="text-sm text-muted-foreground mt-0.5">Rotas realizadas e catálogo de rotas homologadas · {periodoLabel}</p>
       </div>
 
       {/* KPIs */}
