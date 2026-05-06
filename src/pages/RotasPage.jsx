@@ -34,13 +34,13 @@ export default function RotasPage() {
   const [tab, setTab] = useState('realizadas');
 
   const filteredRealizadas = rotasRealizadas.filter(r =>
-    !search || r.rota.toLowerCase().includes(search.toLowerCase())
+    !search || String(r.rota || '').toLowerCase().includes(search.toLowerCase())
   );
   const filteredCatalogo = rotasCatalogo.filter(r =>
-    !search || r.rota.toLowerCase().includes(search.toLowerCase()) || r.origem.toLowerCase().includes(search.toLowerCase()) || r.destino.toLowerCase().includes(search.toLowerCase())
+    !search || String(r.rota || '').toLowerCase().includes(search.toLowerCase()) || String(r.origem || '').toLowerCase().includes(search.toLowerCase()) || String(r.destino || '').toLowerCase().includes(search.toLowerCase())
   );
 
-  const kmData = rotasCatalogo.map(r => ({ rota: r.rota.split('/')[1] || r.rota, km: r.km, pedagio: r.valorPedagios }));
+  const kmData = rotasCatalogo.map(r => ({ rota: String(r.rota || '').split('/')[1] || r.rota, km: r.km, pedagio: r.valorPedagios }));
 
   return (
     <div className="p-4 lg:p-6 space-y-6">

@@ -43,15 +43,16 @@ export default function FaturamentoPage() {
   const [currentDayIndex, setCurrentDayIndex] = useState(0);
 
   // Extrair dias únicos dos dados
-  const diasUnicos = [...new Set(faturamentoData.map(d => d.data.split('/')[0]))].sort((a, b) => parseInt(a) - parseInt(b));
+  const diasUnicos = [...new Set(faturamentoData.map(d => String(d.data || '').split('/')[0]).filter(Boolean))].sort((a, b) => parseInt(a) - parseInt(b));
 
   // Filtrar por dia selecionado
-  const diaAtual = diasUnicos[currentDayIndex];
+  const diaAtual = diasUnicos[currentDayIndex] || '';
 
   const filtered = faturamentoData.filter(d => {
-    const matchSearch = !search || d.motorista.toLowerCase().includes(search.toLowerCase()) || d.rota.toLowerCase().includes(search.toLowerCase()) || d.tomador.toLowerCase().includes(search.toLowerCase()) || d.cte.includes(search) || d.placa.toLowerCase().includes(search.toLowerCase());
+    const searchTerm = search.toLowerCase();
+    const matchSearch = !search || String(d.motorista || '').toLowerCase().includes(searchTerm) || String(d.rota || '').toLowerCase().includes(searchTerm) || String(d.tomador || '').toLowerCase().includes(searchTerm) || String(d.cte || '').includes(search) || String(d.placa || '').toLowerCase().includes(searchTerm);
     const matchEmpresa = filterEmpresa === 'Todos' || d.empresa === filterEmpresa;
-    const dia = d.data.split('/')[0];
+    const dia = String(d.data || '').split('/')[0];
     const matchDia = dia === diaAtual;
     return matchSearch && matchEmpresa && matchDia;
   });

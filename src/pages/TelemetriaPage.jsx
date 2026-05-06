@@ -71,8 +71,8 @@ export default function TelemetriaPage() {
 
   const filtered = bwtTelemetria.filter(d =>
     !search ||
-    d.motorista.toLowerCase().includes(search.toLowerCase()) ||
-    d.placa.toLowerCase().includes(search.toLowerCase())
+    String(d.motorista || '').toLowerCase().includes(search.toLowerCase()) ||
+    String(d.placa || '').toLowerCase().includes(search.toLowerCase())
   );
 
   return (
