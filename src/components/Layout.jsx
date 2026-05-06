@@ -1,5 +1,6 @@
 import { NavLink, Outlet } from 'react-router-dom';
 import { Activity, BarChart3, Route, Truck, Wallet, TrendingUp, LineChart } from 'lucide-react';
+import { MonthDataProvider } from '../lib/MonthDataContext';
 
 const links = [
   { to: '/', label: 'Visão Geral', icon: BarChart3, end: true },
@@ -115,7 +116,7 @@ export default function Layout() {
             </div>
           </header>
 
-          <Outlet />
+          <MonthDataProvider><Outlet /></MonthDataProvider>
         </main>
 
       </div>
