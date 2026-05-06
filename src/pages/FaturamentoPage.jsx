@@ -42,6 +42,11 @@ export default function FaturamentoPage() {
   const [filterEmpresa, setFilterEmpresa] = useState('Todos');
   const [currentDayIndex, setCurrentDayIndex] = useState(0);
 
+
+  if (!faturamentoData.length) {
+    return <div className="p-4 lg:p-6"><h1 className="text-2xl font-bold text-foreground">Faturamento</h1><p className="text-sm text-muted-foreground mt-2">Sem dados para este mês selecionado.</p></div>;
+  }
+
   // Extrair dias únicos dos dados
   const diasUnicos = [...new Set(faturamentoData.map(d => String(d.data || '').split('/')[0]).filter(Boolean))].sort((a, b) => parseInt(a) - parseInt(b));
 

@@ -33,6 +33,11 @@ export default function RotasPage() {
   const [search, setSearch] = useState('');
   const [tab, setTab] = useState('realizadas');
 
+
+  if (!rotasRealizadas.length && !rotasCatalogo.length) {
+    return <div className="p-4 lg:p-6"><h1 className="text-2xl font-bold text-foreground">Rotas</h1><p className="text-sm text-muted-foreground mt-2">Sem dados para este mês selecionado.</p></div>;
+  }
+
   const filteredRealizadas = rotasRealizadas.filter(r =>
     !search || String(r.rota || '').toLowerCase().includes(search.toLowerCase())
   );

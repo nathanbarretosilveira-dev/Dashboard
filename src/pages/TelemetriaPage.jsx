@@ -69,6 +69,11 @@ export default function TelemetriaPage() {
   const faixaChart = bwtTelemetria.slice(0, 10).map(d => ({ name: (d.motorista || "").split(" ")[0], verde: d.faixaVerde, azul: d.faixaAzul, amarela: d.faixaAmarela, vermelha: d.faixaVermelha }));
   const [search, setSearch] = useState('');
 
+
+  if (!bwtTelemetria.length) {
+    return <div className="p-4 lg:p-6"><h1 className="text-2xl font-bold text-foreground">Telemetria Sighra</h1><p className="text-sm text-muted-foreground mt-2">Sem dados para este mês selecionado.</p></div>;
+  }
+
   const filtered = bwtTelemetria.filter(d =>
     !search ||
     String(d.motorista || '').toLowerCase().includes(search.toLowerCase()) ||

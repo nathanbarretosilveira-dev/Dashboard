@@ -115,6 +115,8 @@ export default function ComparativoPage() {
   }
 
   if (meses.length < 2) {
+    // Estado sem dados suficientes
+
     return (
       <div className="p-6">
         <h1 className="text-3xl font-bold mb-6">Comparativo de Períodos</h1>

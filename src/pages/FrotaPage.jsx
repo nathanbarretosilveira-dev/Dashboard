@@ -35,6 +35,11 @@ export default function FrotaPage() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+
+  if (!frotaVeiculos.length) {
+    return <div className="p-4 lg:p-6"><h1 className="text-2xl font-bold text-foreground">Performance da Frota</h1><p className="text-sm text-muted-foreground mt-2">Sem dados para este mês selecionado.</p></div>;
+  }
+
   // @ts-ignore
   const sorted = [...frotaVeiculos].sort((a, b) => Number(b[sort]) - Number(a[sort]));
 
