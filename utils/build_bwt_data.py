@@ -315,6 +315,7 @@ def _import_to_api(data: dict, mes: str, ano: str):
             "faturamentoData": data["faturamentoData"],
             "rotasCatalogo": data["rotasCatalogo"],
             "telemetriaData": data["telemetriaData"],
+            "sobrescrever": True,
         }
         
         response = requests.post(f"{API_BASE_URL}/importar", json=payload, timeout=API_TIMEOUT)
