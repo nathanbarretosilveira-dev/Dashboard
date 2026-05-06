@@ -17,7 +17,6 @@ const monthNames = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho
 // @ts-ignore
 const CustomTooltip = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null;
-
   const hasData = faturamentoPorDia.length || frotaVeiculos.length || rotasRealizadas.length || faturamentoData.length;
   if (!hasData) {
     return (

@@ -10,7 +10,7 @@ const fmtNum = (v) => new Intl.NumberFormat('pt-BR').format(v ?? 0);
 // @ts-ignore
 const VariacaoCard = ({ label, valor1, valor2, unit = 'R$' }) => {
   const variacao = valor2 - valor1;
-  const variacaoPercent = (variacao / valor1) * 100;
+  const variacaoPercent = valor1 ? (variacao / valor1) * 100 : 0;
   const isPositive = variacao >= 0;
 
   return (

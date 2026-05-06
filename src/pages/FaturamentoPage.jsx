@@ -194,7 +194,7 @@ export default function FaturamentoPage() {
                 </div>
                 <div className="text-right">
                   <p className="text-xs font-semibold text-foreground">{fmt(e.value)}</p>
-                  <p className="text-xs text-muted-foreground">{((e.value / totalFat) * 100).toFixed(2)}%</p>
+                  <p className="text-xs text-muted-foreground">{totalFat ? ((e.value / totalFat) * 100).toFixed(2) : '0.00'}%</p>
                 </div>
               </div>
             ))}
@@ -215,7 +215,7 @@ export default function FaturamentoPage() {
                 ← Dia Anterior
               </button>
               <span className="px-3 py-1 text-sm font-semibold text-foreground">
-                Dia {diaAtual} de Abril
+                Dia {diaAtual} · {periodoLabel}
               </span>
               <button
                 onClick={goToNextDay}
@@ -237,7 +237,7 @@ export default function FaturamentoPage() {
           </div>
 
           <div className="flex flex-col sm:flex-row gap-2 w-full">
-            <h2 className="font-semibold text-foreground text-sm">CTes do Dia {diaAtual}</h2>
+            <h2 className="font-semibold text-foreground text-sm">CTes do Dia {diaAtual || "--"}</h2>
             <div className="relative flex-1 sm:w-48">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
               <input
