@@ -5,7 +5,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { Truck, TrendingDown, TrendingUp, Fuel, ChevronDown, ChevronUp } from 'lucide-react';
 import KPICard from '../components/KPICard';
 // @ts-ignore
-import { frotaVeiculos, kpiGeral } from '../lib/bwtData';
+import { useMonthData } from '../lib/MonthDataContext';
 import { Customized } from 'recharts';
 
 // @ts-ignore
@@ -13,12 +13,13 @@ const fmt = (v) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency:
 // @ts-ignore
 const fmtNum = (v) => new Intl.NumberFormat('pt-BR').format(v);
 
-const totalKm = frotaVeiculos.reduce((s, v) => s + v.hodometro, 0);
-const totalFat = frotaVeiculos.reduce((s, v) => s + v.faturamento, 0);
-const totalLitros = frotaVeiculos.reduce((s, v) => s + v.litros, 0);
-const veiculosAtivos = frotaVeiculos.filter(v => v.kmCarregado > 0).length;
-
 export default function FrotaPage() {
+  const { data, periodoLabel } = useMonthData();
+  const frotaVeiculos = data.frotaVeiculos || [];
+  const totalKm = frotaVeiculos.reduce((s, v) => s + (v.hodometro || 0), 0);
+  const totalFat = frotaVeiculos.reduce((s, v) => s + (v.faturamento || 0), 0);
+  const totalLitros = frotaVeiculos.reduce((s, v) => s + (v.litros || 0), 0);
+  const veiculosAtivos = frotaVeiculos.filter(v => v.kmCarregado > 0).length;
   const [sort, setSort] = useState('resultado');
   // @ts-ignore
   const [expandedRow, setExpandedRow] = useState(null);
@@ -33,6 +34,11 @@ export default function FrotaPage() {
 
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+
+  if (!frotaVeiculos.length) {
+    return <div className="p-4 lg:p-6"><h1 className="text-2xl font-bold text-foreground">Performance da Frota</h1><p className="text-sm text-muted-foreground mt-2">Sem dados para este mês selecionado.</p></div>;
+  }
 
   // @ts-ignore
   const sorted = [...frotaVeiculos].sort((a, b) => Number(b[sort]) - Number(a[sort]));
@@ -115,7 +121,7 @@ export default function FrotaPage() {
     <div className="p-4 lg:p-6 space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-foreground">Performance da Frota</h1>
-        <p className="text-sm text-muted-foreground mt-0.5">Análise individual por veículo · Abril 2026</p>
+        <p className="text-sm text-muted-foreground mt-0.5">Análise individual por veículo · {periodoLabel}</p>
       </div>
 
       {/* KPIs */}
