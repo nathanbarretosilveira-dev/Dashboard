@@ -128,29 +128,24 @@ def _rows_with_headers(rows, header_row_index=0):
 def build_data(path: Path):
     sheets = _load_workbook_sheets(path)
 
-    # Ler KPI resumidos diretamente das primeiras linhas (após header)
+    # Ler KPI resumidos diretamente das linhas da aba BWT (coluna W descrição, X valor)
     bwt_sheet = sheets.get("BWT", [])
     ebitda_bwt = 0.0
     ebitda_subcontratado = 0.0
     resultado_total = 0.0
-    
-    # Linha 0: EBITDA BWT (coluna W, valor em X)
-    if len(bwt_sheet) > 0:
-        row0 = bwt_sheet[0]
-        if "EBITDA BWT" in str(row0.get("W", "")):
-            ebitda_bwt = _safe_float(row0.get("X", 0))
-    
-    # Linha 1: EBITDA SUBCONTRATADO (coluna W, valor em X)
-    if len(bwt_sheet) > 1:
-        row1 = bwt_sheet[1]
-        if "EBITDA SUBCONTRATADO" in str(row1.get("W", "")):
-            ebitda_subcontratado = _safe_float(row1.get("X", 0))
-    
-    # Linha 2: RESULTADO (coluna W, valor em X)
-    if len(bwt_sheet) > 2:
-        row2 = bwt_sheet[2]
-        if "RESULTADO" in str(row2.get("W", "")):
-            resultado_total = _safe_float(row2.get("X", 0))
+
+    for row in bwt_sheet[:50]:
+        label = str(row.get("W", "")).strip().upper()
+        value = _safe_float(row.get("X", 0))
+        if not label:
+            continue
+
+        if "EBITDA" in label and "BWT" in label:
+            ebitda_bwt = value
+        elif "EBITDA" in label and "SUB" in label:
+            ebitda_subcontratado = value
+        elif "RESULTADO" in label:
+            resultado_total = value
 
     bwt_rows = _rows_with_headers(sheets.get("BWT", []), 0)
     fat_rows = _rows_with_headers(sheets.get("Faturamento", []), 0)
