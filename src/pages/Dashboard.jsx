@@ -8,7 +8,7 @@ import { LabelList } from 'recharts';
 import { Trophy } from 'lucide-react';
 
 // @ts-ignore
-const fmt = (v) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(v);
+const fmt = (v) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number(v || 0));
 // @ts-ignore
 const fmtNum = (v) => new Intl.NumberFormat('pt-BR').format(v);
 
@@ -33,7 +33,11 @@ const CustomTooltip = ({ active, payload, label }) => {
 export default function Dashboard() {
   const { meses, selectedMesId, setSelectedMesId, periodoLabel, data } = useMonthData();
 
-  const kpiGeral = data.kpiGeral || {};
+  const kpiGeral = {
+    ebitdaBWT: Number(data?.kpiGeral?.ebitdaBWT || 0),
+    ebitdaSubcontratado: Number(data?.kpiGeral?.ebitdaSubcontratado || 0),
+    resultadoTotal: Number(data?.kpiGeral?.resultadoTotal || 0),
+  };
   const faturamentoPorDia = data.faturamentoPorDia || [];
   const rotasRealizadas = data.rotasRealizadas || [];
   const frotaVeiculos = data.frotaVeiculos || [];
@@ -76,9 +80,10 @@ export default function Dashboard() {
   const topClientes = Object.values(
     faturamentoData.reduce((acc, item) => {
       const nome = normalizarCliente(item.tomador);
+      const valor = Number(item.valorTotal ?? item.valor_total ?? 0);
       if (!nome) return acc;
       if (!acc[nome]) acc[nome] = { cliente: nome, faturamento: 0, viagens: 0 };
-      acc[nome].faturamento += Number(item.valorTotal || 0);
+      acc[nome].faturamento += valor;
       acc[nome].viagens += 1;
       return acc;
     }, {})
