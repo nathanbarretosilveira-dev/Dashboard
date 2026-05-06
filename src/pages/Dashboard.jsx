@@ -17,15 +17,7 @@ const monthNames = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho
 // @ts-ignore
 const CustomTooltip = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null;
-  const hasData = faturamentoPorDia.length || frotaVeiculos.length || rotasRealizadas.length || faturamentoData.length;
-  if (!hasData) {
-    return (
-      <div className="p-4 lg:p-6">
-        <h1 className="text-2xl font-bold text-foreground">Visão Geral</h1>
-        <p className="text-sm text-muted-foreground mt-2">Sem dados para este mês selecionado.</p>
-      </div>
-    );
-  }
+
 
   return (
     <div className="bg-card border border-border rounded-lg shadow-lg p-3 text-xs">
@@ -57,6 +49,17 @@ export default function Dashboard() {
     { name: "Subcontratado", value: kpiGeral.ebitdaSubcontratado, color: "#7C3AED" },
   ];
   const topRotas = rotasRealizadas.slice(0, 9);
+
+  const hasData = faturamentoPorDia.length || frotaVeiculos.length || rotasRealizadas.length || faturamentoData.length;
+
+  if (!hasData) {
+    return (
+      <div className="p-4 lg:p-6">
+        <h1 className="text-2xl font-bold text-foreground">Visão Geral</h1>
+        <p className="text-sm text-muted-foreground mt-2">Sem dados para este mês selecionado.</p>
+      </div>
+    );
+  }
 
   const normalizarCliente = (nome) => {
     if (!nome) return "";
