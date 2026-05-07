@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { Fragment, useState, useEffect } from 'react';
 // @ts-ignore
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ScatterChart, Scatter, ZAxis, LabelList } from 'recharts';
 // @ts-ignore
@@ -12,6 +12,7 @@ import { Customized } from 'recharts';
 const fmt = (v) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(v);
 // @ts-ignore
 const fmtNum = (v) => new Intl.NumberFormat('pt-BR').format(v);
+const toNumber = (v) => (Number.isFinite(Number(v)) ? Number(v) : 0);
 
 export default function FrotaPage() {
   const { data, periodoLabel } = useMonthData();
@@ -41,7 +42,7 @@ export default function FrotaPage() {
   }
 
   // @ts-ignore
-  const sorted = [...frotaVeiculos].sort((a, b) => Number(b[sort]) - Number(a[sort]));
+  const sorted = [...frotaVeiculos].sort((a, b) => toNumber(b[sort]) - toNumber(a[sort]));
 
   // @ts-ignore
   const CustomTickPlaca = ({ x, y, payload }) => {
@@ -63,11 +64,11 @@ export default function FrotaPage() {
   };
 
   const chartData = [...frotaVeiculos]
-    .sort((a, b) => b.ebitdaAtingido - a.ebitdaAtingido)
+    .sort((a, b) => toNumber(b.ebitdaAtingido) - toNumber(a.ebitdaAtingido))
     .slice(0, 10)
     .map((v, i) => ({
       placa: v.placa,
-      ebitda: v.ebitdaAtingido * 100,
+      ebitda: toNumber(v.ebitdaAtingido) * 100,
       fundo: 100,
       ebitdaValor: v.resultado, // ✅ correto agora
       rank: i + 1,
@@ -250,9 +251,8 @@ export default function FrotaPage() {
               {sorted.map((v,
                 // @ts-ignore
                 i) => (
-                <>
+                <Fragment key={v.placa}>
                   <tr
-                    key={v.placa}
                     className="hover:bg-muted/30 cursor-pointer transition-colors text-center"
                     // @ts-ignore
                     onClick={() => setExpandedRow(expandedRow === v.placa ? null : v.placa)}
@@ -280,7 +280,7 @@ export default function FrotaPage() {
                     </td>
 
                     <td className={`px-4 py-3 font-semibold ${ebitdaColor(v.ebitdaAtingido)}`}>
-                      {(v.ebitdaAtingido * 100).toFixed(2)}%
+                      {(toNumber(v.ebitdaAtingido) * 100).toFixed(2)}%
                     </td>
 
                     <td className="px-4 py-3">
@@ -290,7 +290,7 @@ export default function FrotaPage() {
                     </td>
 
                     <td className="px-4 py-3 text-muted-foreground hidden lg:table-cell">
-                      {v.kmL.toFixed(2)}
+                      {toNumber(v.kmL).toFixed(2)}
                     </td>
 
                     <td className="px-4 py-3">
@@ -329,7 +329,7 @@ export default function FrotaPage() {
                           </div>
                           <div className="bg-card rounded-lg p-3 border border-border">
                             <p className="text-xs text-muted-foreground">Consumo</p>
-                            <p className="text-sm font-semibold text-foreground mt-1">{v.kmL.toFixed(2)} km/L</p>
+                            <p className="text-sm font-semibold text-foreground mt-1">{toNumber(v.kmL).toFixed(2)} km/L</p>
                           </div>
                           <div className="bg-card rounded-lg p-3 border border-border">
                             <p className="text-xs text-muted-foreground">Margem</p>
@@ -339,7 +339,7 @@ export default function FrotaPage() {
                       </td>
                     </tr>
                   )}
-                </>
+                </Fragment>
               ))}
             </tbody>
           </table>
