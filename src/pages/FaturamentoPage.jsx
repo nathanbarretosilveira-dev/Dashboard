@@ -31,13 +31,6 @@ const CustomTooltip = ({ active, payload, label }) => {
 export default function FaturamentoPage() {
   const { data, periodoLabel } = useMonthData();
   const faturamentoData = data.faturamentoData || [];
-  const rotasRealizadas = data.rotasRealizadas || [];
-  const totalFat = faturamentoData.reduce((s, d) => s + (d.valorTotal || 0), 0);
-  const totalVolume = faturamentoData.reduce((s, d) => s + (d.quantidade || 0), 0);
-  const totalPedagio = faturamentoData.reduce((s, d) => s + (d.pedagio || 0), 0);
-  const bwtFat = faturamentoData.filter(d => d.empresa === "BWT").reduce((s, d) => s + (d.valorTotal || 0), 0);
-  const subFat = faturamentoData.filter(d => d.empresa === "SUBCONTRATADO").reduce((s, d) => s + (d.valorTotal || 0), 0);
-  const empresaPie = [{ name: "BWT", value: bwtFat, color: "#2563EB" },{ name: "Subcontratado", value: subFat, color: "#7C3AED" }];
   const [search, setSearch] = useState('');
   const [filterEmpresa, setFilterEmpresa] = useState('Todos');
   const [currentDayIndex, setCurrentDayIndex] = useState(0);
@@ -53,13 +46,32 @@ export default function FaturamentoPage() {
   // Filtrar por dia selecionado
   const diaAtual = diasUnicos[currentDayIndex] || '';
 
-  const filtered = faturamentoData.filter(d => {
+  const dayData = faturamentoData.filter(d => String(d.data || '').split('/')[0] === diaAtual);
+
+  const totalFat = dayData.reduce((s, d) => s + (d.valorTotal || 0), 0);
+  const totalVolume = dayData.reduce((s, d) => s + (d.quantidade || 0), 0);
+  const totalPedagio = dayData.reduce((s, d) => s + (d.pedagio || 0), 0);
+  const bwtFat = dayData.filter(d => d.empresa === 'BWT').reduce((s, d) => s + (d.valorTotal || 0), 0);
+  const subFat = dayData.filter(d => d.empresa === 'SUBCONTRATADO').reduce((s, d) => s + (d.valorTotal || 0), 0);
+
+  const empresaPie = [{ name: 'BWT', value: bwtFat, color: '#2563EB' }, { name: 'Subcontratado', value: subFat, color: '#7C3AED' }];
+
+  const rotasPorDia = Object.values(dayData.reduce((acc, item) => {
+    const rota = item.rota || 'Sem rota';
+    if (!acc[rota]) {
+      acc[rota] = { rota, valorTotal: 0, viagens: 0 };
+    }
+
+    acc[rota].valorTotal += item.valorTotal || 0;
+    acc[rota].viagens += 1;
+    return acc;
+  }, {})).sort((a, b) => b.valorTotal - a.valorTotal).slice(0, 10);
+
+  const filtered = dayData.filter(d => {
     const searchTerm = search.toLowerCase();
     const matchSearch = !search || String(d.motorista || '').toLowerCase().includes(searchTerm) || String(d.rota || '').toLowerCase().includes(searchTerm) || String(d.tomador || '').toLowerCase().includes(searchTerm) || String(d.cte || '').includes(search) || String(d.placa || '').toLowerCase().includes(searchTerm);
     const matchEmpresa = filterEmpresa === 'Todos' || d.empresa === filterEmpresa;
-    const dia = String(d.data || '').split('/')[0];
-    const matchDia = dia === diaAtual;
-    return matchSearch && matchEmpresa && matchDia;
+    return matchSearch && matchEmpresa;
   });
 
   // Navegação de dias
@@ -104,9 +116,9 @@ export default function FaturamentoPage() {
 
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <KPICard title="Faturamento Total" value={fmt(totalFat)} subtitle={`${faturamentoData.length} CTes emitidos`} icon={DollarSign} color="blue" />
-        <KPICard title="BWT" value={fmt(bwtFat)} subtitle={`${faturamentoData.filter(d => d.empresa === 'BWT').length} CTes`} icon={Building2} color="green" />
-        <KPICard title="Subcontratado" value={fmt(subFat)} subtitle={`${faturamentoData.filter(d => d.empresa === 'SUBCONTRATADO').length} CTes`} icon={Building2} color="purple" />
+        <KPICard title="Faturamento Total" value={fmt(totalFat)} subtitle={`${dayData.length} CTes emitidos`} icon={DollarSign} color="blue" />
+        <KPICard title="BWT" value={fmt(bwtFat)} subtitle={`${dayData.filter(d => d.empresa === 'BWT').length} CTes`} icon={Building2} color="green" />
+        <KPICard title="Subcontratado" value={fmt(subFat)} subtitle={`${dayData.filter(d => d.empresa === 'SUBCONTRATADO').length} CTes`} icon={Building2} color="purple" />
         <KPICard title="Volume Transportado" value={`${fmtNum(Math.round(totalVolume / 1000))} m³`} subtitle={`Pedágios destacadas: ${fmt(totalPedagio)}`} icon={Weight} color="amber" />
       </div>
 
@@ -116,7 +128,7 @@ export default function FaturamentoPage() {
           <h2 className="font-semibold text-foreground text-sm mb-4">Faturamento por Rota (Top 10)</h2>
           <ResponsiveContainer width="100%" height={250}>
             <BarChart
-              data={rotasRealizadas.slice(0, 10)}
+              data={rotasPorDia}
               layout="vertical"
               margin={{ left: 10, right: 50, top: 0, bottom: 0 }}
             >
