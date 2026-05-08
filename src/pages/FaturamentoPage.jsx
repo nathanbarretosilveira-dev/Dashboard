@@ -113,7 +113,7 @@ export default function FaturamentoPage() {
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2 bg-card rounded-xl border border-border p-5">
-          <h2 className="font-semibold text-foreground text-sm mb-4">Faturamento por Rota (Top 8)</h2>
+          <h2 className="font-semibold text-foreground text-sm mb-4">Faturamento por Rota (Top 10)</h2>
           <ResponsiveContainer width="100%" height={250}>
             <BarChart
               data={rotasRealizadas.slice(0, 10)}
