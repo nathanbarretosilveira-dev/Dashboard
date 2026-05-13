@@ -1,6 +1,9 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { kpiGeral as fallbackKpiGeral, faturamentoPorDia as fallbackFaturamentoPorDia, rotasRealizadas as fallbackRotasRealizadas, frotaVeiculos as fallbackFrotaVeiculos, faturamentoData as fallbackFaturamentoData, rotasCatalogo as fallbackRotasCatalogo, telemetriaData as fallbackTelemetriaData } from './bwtData';
 
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || 'http://localhost:4001/api';
+
 const MonthDataContext = createContext(null);
 
 const normalizeVehicle = (v = {}) => ({
@@ -63,7 +66,7 @@ const normalizeData = (raw = {}) => ({
   })),
 });
 
-const monthNames = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+const monthNames = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
 
 // @ts-ignore
 export function MonthDataProvider({ children }) {
@@ -82,13 +85,13 @@ export function MonthDataProvider({ children }) {
   useEffect(() => {
     (async () => {
       try {
-        const resp = await fetch('http://localhost:4001/api/meses');
+        const resp = await fetch(`${API_BASE_URL}/meses`);
         const result = await resp.json();
         if (result?.success && result.data?.length) {
           setMeses(result.data);
           setSelectedMesId(String(result.data[0].id));
         }
-      } catch {}
+      } catch { }
     })();
   }, []);
 
@@ -99,11 +102,11 @@ export function MonthDataProvider({ children }) {
     (async () => {
       try {
         // @ts-ignore
-        const resp = await fetch(`http://localhost:4001/api/mes/${selected.mes}/${selected.ano}`);
+        const resp = await fetch(`${API_BASE_URL}/mes/${selected.mes}/${selected.ano}`);
         const result = await resp.json();
         // @ts-ignore
         if (result?.success && result?.data) setData(normalizeData(result.data));
-      } catch {}
+      } catch { }
     })();
   }, [meses, selectedMesId]);
 
@@ -112,7 +115,7 @@ export function MonthDataProvider({ children }) {
     const selected = meses.find((m) => String(m.id) === String(selectedMesId));
     if (!selected) return 'Mês atual';
     // @ts-ignore
-    return `${monthNames[Number(selected.mes)-1] || selected.mes} ${selected.ano}`;
+    return `${monthNames[Number(selected.mes) - 1] || selected.mes} ${selected.ano}`;
   }, [meses, selectedMesId]);
 
   // @ts-ignore
