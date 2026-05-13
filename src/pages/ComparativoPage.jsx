@@ -28,12 +28,12 @@ import {
 import { useEffect, useMemo, useState } from 'react';
 
 const API_BASE_URL =
-  // 
+  
   import.meta.env.VITE_API_BASE_URL || 'http://localhost:4001/api';
 
 const ALL_PLACAS = '__all__';
 
-// 
+
 const fmt = (v) =>
   new Intl.NumberFormat('pt-BR', {
     style: 'currency',
@@ -42,22 +42,22 @@ const fmt = (v) =>
     maximumFractionDigits: 2,
   }).format(Number(v || 0));
 
-// 
+
 const fmtNum = (v) => new Intl.NumberFormat('pt-BR').format(Number(v || 0));
 
-// 
+
 const toNumber = (v) => {
   const n = Number(v);
   return Number.isFinite(n) ? n : 0;
 };
 
-// 
+
 const pct = (v) => `${toNumber(v).toFixed(2)}%`;
 
-// 
+
 const monthLabel = (mes, ano) => `${String(mes).padStart(2, '0')}/${ano}`;
 
-// 
+
 const getVariation = (valor1, valor2) => {
   const anterior = toNumber(valor1);
   const atual = toNumber(valor2);
@@ -73,7 +73,7 @@ const getVariation = (valor1, valor2) => {
   };
 };
 
-// 
+
 const formatByUnit = (value, unit = 'R$') => {
   if (unit === 'R$') return fmt(value);
   if (unit === '%') return pct(value);
@@ -83,7 +83,7 @@ const formatByUnit = (value, unit = 'R$') => {
   return fmtNum(value);
 };
 
-// 
+
 const CustomTooltip = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null;
 
@@ -92,7 +92,7 @@ const CustomTooltip = ({ active, payload, label }) => {
       <p className="mb-2 font-bold text-gray-900">{label}</p>
 
       {payload.map((
-        // 
+        
         item, index) => {
         const name = item.name;
         const value = item.value;
@@ -118,11 +118,11 @@ const CustomTooltip = ({ active, payload, label }) => {
 };
 
 const VariacaoCard = ({
-  // 
+  
   label,
-  // 
+  
   valor1,
-  // 
+  
   valor2,
   unit = 'R$',
   icon: Icon = TrendingUp,
@@ -145,7 +145,7 @@ const VariacaoCard = ({
   return (
     <div
       className={`relative overflow-hidden rounded-2xl border bg-gradient-to-br p-5 shadow-sm ${
-        // 
+        
         colorClasses[color] || colorClasses.blue
         }`}
     >
@@ -191,11 +191,11 @@ const VariacaoCard = ({
 };
 
 const SimpleKpiCard = ({
-  // 
+  
   label,
-  // 
+  
   value,
-  // 
+  
   subtitle,
   icon: Icon = Activity,
   color = 'blue',
@@ -221,7 +221,7 @@ const SimpleKpiCard = ({
         </div>
 
         <div className={`rounded-xl border p-2 ${
-          // 
+          
           colorClasses[color] || colorClasses.blue}`}>
           <Icon className="h-5 w-5" />
         </div>
@@ -231,11 +231,11 @@ const SimpleKpiCard = ({
 };
 
 const InsightCard = ({
-  // 
+  
   title,
-  // 
+  
   value,
-  // 
+  
   description,
   icon: Icon = Activity,
   color = 'blue',
@@ -253,7 +253,7 @@ const InsightCard = ({
     <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
       <div className="flex gap-3">
         <div className={`h-fit rounded-xl border p-2 ${
-          // 
+          
           colorClasses[color] || colorClasses.blue}`}>
           <Icon className="h-5 w-5" />
         </div>
@@ -269,44 +269,44 @@ const InsightCard = ({
 };
 
 export default function ComparativoPage() {
-  // 
+  
   const [meses, setMeses] = useState([]);
-  // 
+  
   const [loading, setLoading] = useState(true);
 
-  // 
+  
   const [viewMode, setViewMode] = useState('ano');
 
-  // 
+  
   const [selectedAno, setSelectedAno] = useState('');
-  // 
+  
   const [selectedMesMensal, setSelectedMesMensal] = useState('');
-  // 
+  
   const [selectedMes1, setSelectedMes1] = useState('');
-  // 
+  
   const [selectedMes2, setSelectedMes2] = useState('');
 
-  // 
+  
   const [comparativo, setComparativo] = useState(null);
-  // 
+  
   const [comparativoLoading, setComparativoLoading] = useState(false);
 
-  // 
+  
   const [dadosMensais, setDadosMensais] = useState(null);
-  // 
+  
   const [dadosMensaisLoading, setDadosMensaisLoading] = useState(false);
 
-  // 
+  
   const [faturamentoMensal, setFaturamentoMensal] = useState([]);
-  // 
+  
   const [faturamentoMensalLoading, setFaturamentoMensalLoading] = useState(false);
 
-  // 
+  
   const [error, setError] = useState(null);
-  // 
+  
   const [selectedPlaca, setSelectedPlaca] = useState(ALL_PLACAS);
 
-  // 
+  
   useEffect(() => {
     const fetchMeses = async () => {
       try {
@@ -318,7 +318,7 @@ export default function ComparativoPage() {
           setMeses(mesesData);
 
           if (mesesData.length > 0) {
-            // 
+            
             const anos = Array.from(new Set(mesesData.map((m) => Number(m.ano)))).sort(
               (a, b) => b - a
             );
@@ -327,9 +327,9 @@ export default function ComparativoPage() {
             setSelectedAno(String(anoMaisRecente));
 
             const mesesDoAno = mesesData
-              // 
+              
               .filter((m) => Number(m.ano) === Number(anoMaisRecente))
-              // 
+              
               .sort((a, b) => Number(a.mes) - Number(b.mes));
 
             const ultimoMes = mesesDoAno[mesesDoAno.length - 1];
@@ -349,11 +349,11 @@ export default function ComparativoPage() {
             }
           }
         } else {
-          // 
+          
           setError('Erro ao carregar meses disponíveis.');
         }
       } catch (err) {
-        // 
+        
         setError(`Erro ao carregar meses: ${err.message}`);
       } finally {
         setLoading(false);
@@ -363,7 +363,7 @@ export default function ComparativoPage() {
     fetchMeses();
   }, []);
 
-  // 
+  
   useEffect(() => {
     const fetchFaturamentoMensal = async () => {
       if (!selectedAno) return;
@@ -392,10 +392,10 @@ export default function ComparativoPage() {
     }
   }, [viewMode, selectedAno]);
 
-  // 
+  
   useEffect(() => {
     const fetchDadosMensais = async () => {
-      // 
+      
       const mesSelecionado = meses.find((m) => String(m.id) === String(selectedMesMensal));
       if (!mesSelecionado) return;
 
@@ -403,7 +403,7 @@ export default function ComparativoPage() {
 
       try {
         const response = await fetch(
-          // 
+          
           `${API_BASE_URL}/mes/${mesSelecionado.mes}/${mesSelecionado.ano}`
         );
 
@@ -414,12 +414,12 @@ export default function ComparativoPage() {
           setError(null);
         } else {
           setDadosMensais(null);
-          // 
+          
           setError('Erro ao carregar dados mensais.');
         }
       } catch (err) {
         setDadosMensais(null);
-        // 
+        
         setError(`Erro ao carregar dados mensais: ${err.message}`);
       } finally {
         setDadosMensaisLoading(false);
@@ -431,12 +431,12 @@ export default function ComparativoPage() {
     }
   }, [viewMode, selectedMesMensal, meses]);
 
-  // 
+  
   useEffect(() => {
     const fetchComparativo = async () => {
-      // 
+      
       const m1 = meses.find((m) => String(m.id) === String(selectedMes1));
-      // 
+      
       const m2 = meses.find((m) => String(m.id) === String(selectedMes2));
 
       if (!m1 || !m2) return;
@@ -445,7 +445,7 @@ export default function ComparativoPage() {
 
       try {
         const response = await fetch(
-          // 
+          
           `${API_BASE_URL}/comparativo/${m1.mes}/${m1.ano}/${m2.mes}/${m2.ano}`
         );
 
@@ -456,12 +456,12 @@ export default function ComparativoPage() {
           setError(null);
         } else {
           setComparativo(null);
-          // 
+          
           setError('Erro ao carregar comparativo.');
         }
       } catch (err) {
         setComparativo(null);
-        // 
+        
         setError(`Erro ao carregar comparativo: ${err.message}`);
       } finally {
         setComparativoLoading(false);
@@ -479,42 +479,42 @@ export default function ComparativoPage() {
     }
   }, [viewMode, selectedMes1, selectedMes2, meses]);
 
-  // 
+  
   const anosDisponiveis = useMemo(() => {
-    // 
+    
     return Array.from(new Set(meses.map((m) => Number(m.ano))))
       .filter(Boolean)
       .sort((a, b) => b - a);
   }, [meses]);
 
-  // 
+  
   const mesesDoAnoSelecionado = useMemo(() => {
     return meses
-      // 
+      
       .filter((m) => Number(m.ano) === Number(selectedAno))
-      // 
+      
       .sort((a, b) => Number(a.mes) - Number(b.mes));
   }, [meses, selectedAno]);
 
-  // 
+  
   const faturamentoMensalChartData = useMemo(() => {
     if (!faturamentoMensal.length) return [];
 
     const dadosOrdenados = [...faturamentoMensal]
       .map((item) => ({
-        // 
+        
         mes: Number(item.mes),
-        // 
+        
         ano: Number(item.ano),
-        // 
+        
         periodo: item.periodo || monthLabel(item.mes, item.ano),
-        // 
+        
         faturamento: toNumber(item.faturamento),
-        // 
+        
         ebitdaBWT: toNumber(item.ebitdaBWT),
-        // 
+        
         ebitdaSubcontratado: toNumber(item.ebitdaSubcontratado),
-        // 
+        
         resultadoTotal: toNumber(item.resultadoTotal),
       }))
       .sort((a, b) => {
@@ -564,20 +564,20 @@ export default function ComparativoPage() {
     }));
   }, [faturamentoMensal]);
 
-  // 
+  
   const resumoAnual = useMemo(() => {
     const totalFaturamento = faturamentoMensalChartData.reduce(
-      // 
+      
       (s, d) => s + d.faturamento,
       0
     );
     const totalResultado = faturamentoMensalChartData.reduce(
-      // 
+      
       (s, d) => s + d.resultadoTotal,
       0
     );
     const totalEbitdaBWT = faturamentoMensalChartData.reduce(
-      // 
+      
       (s, d) => s + d.ebitdaBWT,
       0
     );
@@ -598,22 +598,22 @@ export default function ComparativoPage() {
     };
   }, [faturamentoMensalChartData]);
 
-  // 
+  
   const frotaP1 = useMemo(() => comparativo?.frotaVeiculos?.p1 || [], [comparativo]);
-  // 
+  
   const frotaP2 = useMemo(() => comparativo?.frotaVeiculos?.p2 || [], [comparativo]);
 
-  // 
+  
   const placasDisponiveis = useMemo(() => {
     return Array.from(
-      // 
+      
       new Set([...frotaP1.map((v) => v.placa), ...frotaP2.map((v) => v.placa)].filter(Boolean))
     ).sort();
   }, [frotaP1, frotaP2]);
 
   const isPlacaFiltrada = selectedPlaca && selectedPlaca !== ALL_PLACAS;
 
-  // 
+  
   useEffect(() => {
     if (viewMode !== 'comparativo') return;
 
@@ -631,35 +631,35 @@ export default function ComparativoPage() {
     }
   }, [viewMode, placasDisponiveis, selectedPlaca]);
 
-  // 
+  
   const placaP1 = useMemo(() => {
     if (!isPlacaFiltrada) return null;
-    // 
+    
     return frotaP1.find((v) => v.placa === selectedPlaca);
   }, [frotaP1, selectedPlaca, isPlacaFiltrada]);
 
-  // 
+  
   const placaP2 = useMemo(() => {
     if (!isPlacaFiltrada) return null;
-    // 
+    
     return frotaP2.find((v) => v.placa === selectedPlaca);
   }, [frotaP2, selectedPlaca, isPlacaFiltrada]);
 
-  // 
+  
   const chartDataComparativo = useMemo(() => {
     if (!comparativo) return [];
 
     if (isPlacaFiltrada) {
       return [
         {
-          // 
+          
           name: comparativo.periodo1,
           faturamento: toNumber(placaP1?.faturamento),
           resultado: toNumber(placaP1?.resultado),
           ebitdaPercent: toNumber(placaP1?.ebitdaAtingido) * 100,
         },
         {
-          // 
+          
           name: comparativo.periodo2,
           faturamento: toNumber(placaP2?.faturamento),
           resultado: toNumber(placaP2?.resultado),
@@ -670,39 +670,39 @@ export default function ComparativoPage() {
 
     return [
       {
-        // 
+        
         name: comparativo.periodo1,
-        // 
+        
         ebitdaBWT: toNumber(comparativo.kpiGeral?.ebitdaBWT?.p1),
-        // 
+        
         ebitdaSub: toNumber(comparativo.kpiGeral?.ebitdaSubcontratado?.p1),
-        // 
+        
         resultado: toNumber(comparativo.kpiGeral?.resultadoTotal?.p1),
-        // 
+        
         faturamento: toNumber(comparativo.faturamentoPorDia?.p1),
       },
       {
-        // 
+        
         name: comparativo.periodo2,
-        // 
+        
         ebitdaBWT: toNumber(comparativo.kpiGeral?.ebitdaBWT?.p2),
-        // 
+        
         ebitdaSub: toNumber(comparativo.kpiGeral?.ebitdaSubcontratado?.p2),
-        // 
+        
         resultado: toNumber(comparativo.kpiGeral?.resultadoTotal?.p2),
-        // 
+        
         faturamento: toNumber(comparativo.faturamentoPorDia?.p2),
       },
     ];
   }, [comparativo, isPlacaFiltrada, placaP1, placaP2]);
 
-  // 
+  
   const placaEvolutionData = useMemo(() => {
     if (!comparativo || !isPlacaFiltrada) return [];
 
     return [
       {
-        // 
+        
         periodo: comparativo.periodo1,
         faturamento: toNumber(placaP1?.faturamento),
         resultado: toNumber(placaP1?.resultado),
@@ -711,7 +711,7 @@ export default function ComparativoPage() {
         kmL: toNumber(placaP1?.kmL),
       },
       {
-        // 
+        
         periodo: comparativo.periodo2,
         faturamento: toNumber(placaP2?.faturamento),
         resultado: toNumber(placaP2?.resultado),
@@ -722,18 +722,18 @@ export default function ComparativoPage() {
     ];
   }, [comparativo, isPlacaFiltrada, placaP1, placaP2]);
 
-  // 
+  
   const mensalFrota = useMemo(() => {
-    // 
+    
     const frota = dadosMensais?.frotaVeiculos || [];
 
-    // 
+    
     const faturamento = frota.reduce((s, v) => s + toNumber(v.faturamento), 0);
-    // 
+    
     const resultado = frota.reduce((s, v) => s + toNumber(v.resultado), 0);
-    // 
+    
     const km = frota.reduce((s, v) => s + toNumber(v.hodometro), 0);
-    // 
+    
     const litros = frota.reduce((s, v) => s + toNumber(v.litros), 0);
     const kmL = litros ? km / litros : 0;
     const margem = faturamento ? (resultado / faturamento) * 100 : 0;
@@ -758,13 +758,13 @@ export default function ComparativoPage() {
     };
   }, [dadosMensais]);
 
-  // 
+  
   const frotaInsights = useMemo(() => {
     if (!comparativo) return null;
 
-    // 
+    
     let p1 = comparativo.frotaMetricas?.p1 || {};
-    // 
+    
     let p2 = comparativo.frotaMetricas?.p2 || {};
 
     if (isPlacaFiltrada) {
@@ -924,7 +924,7 @@ export default function ComparativoPage() {
                 className="w-full rounded-xl border border-gray-300 bg-gray-50 px-4 py-3 text-sm font-semibold text-gray-800 outline-none focus:ring-2 focus:ring-blue-500"
               >
                 {anosDisponiveis.map((
-// 
+
                 ano) => (
                   <option key={ano} value={ano}>
                     {ano}
@@ -948,11 +948,11 @@ export default function ComparativoPage() {
                   const ano = e.target.value;
                   setSelectedAno(ano);
 
-                  // 
+                  
                   const mesesAno = meses
-                    // 
+                    
                     .filter((m) => Number(m.ano) === Number(ano))
-                    // 
+                    
                     .sort((a, b) => Number(a.mes) - Number(b.mes));
 
                   if (mesesAno.length > 0) {
@@ -962,7 +962,7 @@ export default function ComparativoPage() {
                 className="w-full rounded-xl border border-gray-300 bg-gray-50 px-4 py-3 text-sm font-semibold text-gray-800 outline-none focus:ring-2 focus:ring-blue-500"
               >
                 {anosDisponiveis.map((
-// 
+
                 ano) => (
                   <option key={ano} value={ano}>
                     {ano}
@@ -982,7 +982,7 @@ export default function ComparativoPage() {
                 className="w-full rounded-xl border border-gray-300 bg-gray-50 px-4 py-3 text-sm font-semibold text-gray-800 outline-none focus:ring-2 focus:ring-blue-500"
               >
                 {mesesDoAnoSelecionado.map((
-// 
+
                 m) => (
                   <option key={m.id} value={m.id}>
                     {monthLabel(m.mes, m.ano)}
@@ -1006,13 +1006,13 @@ export default function ComparativoPage() {
                 className="w-full rounded-xl border border-gray-300 bg-gray-50 px-4 py-3 text-sm font-semibold text-gray-800 outline-none focus:ring-2 focus:ring-blue-500"
               >
                 {meses.map((
-// 
+
                 m) => (
                   <option key={m.
-                    // 
+                    
                     id} value={m.id}>
                     {monthLabel(m.
-                      // 
+                      
                       mes, m.ano)}
                   </option>
                 ))}
@@ -1034,13 +1034,13 @@ export default function ComparativoPage() {
                 className="w-full rounded-xl border border-gray-300 bg-gray-50 px-4 py-3 text-sm font-semibold text-gray-800 outline-none focus:ring-2 focus:ring-blue-500"
               >
                 {meses.map((
-// 
+
                 m) => (
                   <option key={m.
-                    // 
+                    
                     id} value={m.id}>
                     {monthLabel(m.
-                      // 
+                      
                       mes, m.ano)}
                   </option>
                 ))}
@@ -1120,10 +1120,10 @@ export default function ComparativoPage() {
                   </div>
                 ) : (
                   <
-// 
+
                   ResponsiveContainer width="100%" height={380}>
                     <
-// 
+
                     ComposedChart
                       data={faturamentoMensalChartData}
                       margin={{ top: 20, right: 25, bottom: 5, left: 0 }}
@@ -1141,31 +1141,31 @@ export default function ComparativoPage() {
                       </defs>
 
                       <
-// 
+
                       CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
                       <
-// 
+
                       XAxis dataKey="periodo" tick={{ fontSize: 11, fill: '#6B7280' }} />
 
                       <
-// 
+
                       YAxis
                         tick={{ fontSize: 11, fill: '#6B7280' }}
-                        // 
+                        
                         tickFormatter={(v) => `R$ ${(v / 1000000).toFixed(1)}M`}
                       />
 
                       <
-// 
+
                       Tooltip content={<
-                        // 
+                        
                         CustomTooltip />} />
                       <
-// 
+
                       Legend />
 
                       <
-// 
+
                       Bar
                         dataKey="faturamento"
                         name="Faturamento Mensal"
@@ -1174,25 +1174,25 @@ export default function ComparativoPage() {
                         barSize={38}
                       >
                         <
-// 
+
                         LabelList
                           dataKey="faturamento"
                           position="top"
-                          // 
+                          
                           formatter={(v) => `R$ ${(toNumber(v) / 1000000).toFixed(1)}M`}
                           style={{ fontSize: 10, fontWeight: 700, fill: '#374151' }}
                         />
-                      // 
-                      // 
-                      // 
-                      // 
-                      // 
-                      // 
-                      // 
+                      
+                      
+                      
+                      
+                      
+                      
+                      
                       </Bar>
 
                       <
-// 
+
                       Area
                         type="monotone"
                         dataKey="acumulado"
@@ -1203,7 +1203,7 @@ export default function ComparativoPage() {
                       />
 
                       <
-// 
+
                       Line
                         type="monotone"
                         dataKey="tendenciaAcumulado"
@@ -1213,21 +1213,21 @@ export default function ComparativoPage() {
                         strokeDasharray="7 7"
                         dot={false}
                       />
-                    // 
-                    // 
-                    // 
-                    // 
-                    // 
-                    // 
-                    // 
+                    
+                    
+                    
+                    
+                    
+                    
+                    
                     </ComposedChart>
-                  // 
-                  // 
-                  // 
-                  // 
-                  // 
-                  // 
-                  // 
+                  
+                  
+                  
+                  
+                  
+                  
+                  
                   </ResponsiveContainer>
                 )}
               </div>
@@ -1248,7 +1248,7 @@ export default function ComparativoPage() {
                 <SimpleKpiCard
                   label="Faturamento"
                   value={fmt(mensalFrota.faturamento)}
-                  // 
+                  
                   subtitle={monthLabel(dadosMensais.mes, dadosMensais.ano)}
                   icon={DollarSign}
                   color="blue"
@@ -1289,10 +1289,10 @@ export default function ComparativoPage() {
                   </p>
 
                   <
-// 
+
                   ResponsiveContainer width="100%" height={360}>
                     <
-// 
+
                     ComposedChart
                       data={mensalFrota.topVeiculos}
                       layout="vertical"
@@ -1306,49 +1306,49 @@ export default function ComparativoPage() {
                       </defs>
 
                       <
-// 
+
                       CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" horizontal={false} />
                       <
-// 
+
                       XAxis type="number" tickFormatter={(v) => `R$ ${(v / 1000).toFixed(0)}k`} tick={{ fontSize: 10, fill: '#6B7280' }} />
                       <
-// 
+
                       YAxis type="category" dataKey="placa" width={75} tick={{ fontSize: 11, fill: '#374151', fontWeight: 700 }} />
                       <
-// 
+
                       Tooltip formatter={(v) => fmt(v)} />
 
                       <
-// 
+
                       Bar dataKey="resultado" name="Resultado" fill="url(#topResultadoGradient)" radius={[0, 8, 8, 0]} barSize={20}>
                         <
-// 
+
                         LabelList dataKey="resultado" position="right" formatter={(
-                          // 
+                          
                           v) => fmt(v)} style={{ fontSize: 10, fontWeight: 700, fill: '#374151' }} />
-                      // 
-                      // 
-                      // 
-                      // 
-                      // 
-                      // 
-                      // 
+                      
+                      
+                      
+                      
+                      
+                      
+                      
                       </Bar>
-                    // 
-                    // 
-                    // 
-                    // 
-                    // 
-                    // 
-                    // 
+                    
+                    
+                    
+                    
+                    
+                    
+                    
                     </ComposedChart>
-                  // 
-                  // 
-                  // 
-                  // 
-                  // 
-                  // 
-                  // 
+                  
+                  
+                  
+                  
+                  
+                  
+                  
                   </ResponsiveContainer>
                 </div>
 
@@ -1361,12 +1361,12 @@ export default function ComparativoPage() {
                   </p>
 
                   <
-// 
+
                   ResponsiveContainer width="100%" height={360}>
                     <
-// 
+
                     ComposedChart
-                      // 
+                      
                       data={mensalFrota.bottomVeiculos.map((v) => ({
                         ...v,
                         resultadoVisual: Math.abs(toNumber(v.resultado)),
@@ -1382,58 +1382,58 @@ export default function ComparativoPage() {
                       </defs>
 
                       <
-// 
+
                       CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" horizontal={false} />
                       <
-// 
+
                       XAxis type="number" tickFormatter={(v) => `R$ ${(v / 1000).toFixed(0)}k`} tick={{ fontSize: 10, fill: '#6B7280' }} />
                       <
-// 
+
                       YAxis type="category" dataKey="placa" width={75} tick={{ fontSize: 11, fill: '#374151', fontWeight: 700 }} />
                       <
-// 
+
                       Tooltip formatter={(
-                        // 
-                        // 
-                        // 
-                        // 
-                        // 
-                        // 
-                        // 
-                        // 
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
                         v, name, props) => [fmt(props.payload.resultado), 'Resultado']} />
 
                       <
-// 
+
                       Bar dataKey="resultadoVisual" name="Resultado" fill="url(#bottomResultadoGradient)" radius={[0, 8, 8, 0]} barSize={20}>
                         <
-// 
+
                         LabelList dataKey="resultado" position="right" formatter={(
-                          // 
+                          
                           v) => fmt(v)} style={{ fontSize: 10, fontWeight: 700, fill: '#374151' }} />
-                      // 
-                      // 
-                      // 
-                      // 
-                      // 
-                      // 
-                      // 
+                      
+                      
+                      
+                      
+                      
+                      
+                      
                       </Bar>
-                    // 
-                    // 
-                    // 
-                    // 
-                    // 
-                    // 
-                    // 
+                    
+                    
+                    
+                    
+                    
+                    
+                    
                     </ComposedChart>
-                  // 
-                  // 
-                  // 
-                  // 
-                  // 
-                  // 
-                  // 
+                  
+                  
+                  
+                  
+                  
+                  
+                  
                   </ResponsiveContainer>
                 </div>
               </div>
@@ -1453,9 +1453,9 @@ export default function ComparativoPage() {
               <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                 <VariacaoCard
                   label="EBITDA BWT"
-                  // 
+                  
                   valor1={comparativo.kpiGeral?.ebitdaBWT?.p1}
-                  // 
+                  
                   valor2={comparativo.kpiGeral?.ebitdaBWT?.p2}
                   icon={Truck}
                   color="blue"
@@ -1463,9 +1463,9 @@ export default function ComparativoPage() {
 
                 <VariacaoCard
                   label="EBITDA Subcontratado"
-                  // 
+                  
                   valor1={comparativo.kpiGeral?.ebitdaSubcontratado?.p1}
-                  // 
+                  
                   valor2={comparativo.kpiGeral?.ebitdaSubcontratado?.p2}
                   icon={Activity}
                   color="purple"
@@ -1473,9 +1473,9 @@ export default function ComparativoPage() {
 
                 <VariacaoCard
                   label="Resultado Total"
-                  // 
+                  
                   valor1={comparativo.kpiGeral?.resultadoTotal?.p1}
-                  // 
+                  
                   valor2={comparativo.kpiGeral?.resultadoTotal?.p2}
                   icon={DollarSign}
                   color="green"
@@ -1502,7 +1502,7 @@ export default function ComparativoPage() {
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
                     <div className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
                       {comparativo.
-                        // 
+                        
                         periodo1} vs {comparativo.periodo2}
                     </div>
 
@@ -1518,7 +1518,7 @@ export default function ComparativoPage() {
                         <option value={ALL_PLACAS}>Todas as placas</option>
 
                         {placasDisponiveis.map((
-// 
+
                         placa) => (
                           <option key={placa} value={placa}>
                             {placa}
@@ -1530,10 +1530,10 @@ export default function ComparativoPage() {
                 </div>
 
                 <
-// 
+
                 ResponsiveContainer width="100%" height={350}>
                   <
-// 
+
                   ComposedChart
                     data={chartDataComparativo}
                     margin={{ top: 20, right: 25, bottom: 5, left: 0 }}
@@ -1551,44 +1551,44 @@ export default function ComparativoPage() {
                     </defs>
 
                     <
-// 
+
                     CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
 
                     <
-// 
+
                     XAxis dataKey="name" tick={{ fontSize: 12, fill: '#6B7280' }} />
 
                     <
-// 
+
                     YAxis
                       yAxisId="left"
                       tick={{ fontSize: 11, fill: '#6B7280' }}
-                      // 
+                      
                       tickFormatter={(v) => `R$ ${(v / 1000).toFixed(0)}k`}
                     />
 
                     {isPlacaFiltrada && (
-                      // 
+                      
                       <YAxis
                         yAxisId="right"
                         orientation="right"
                         tick={{ fontSize: 11, fill: '#6B7280' }}
-                        // 
+                        
                         tickFormatter={(v) => `${toNumber(v).toFixed(0)}%`}
                       />
                     )}
 
                     <
-// 
+
                     Tooltip content={<
-                      // 
+                      
                       CustomTooltip />} />
                     <
-// 
+
                     Legend />
 
                     <
-// 
+
                     Bar
                       yAxisId="left"
                       dataKey="faturamento"
@@ -1599,7 +1599,7 @@ export default function ComparativoPage() {
                     />
 
                     {!isPlacaFiltrada && (
-                      // 
+                      
                       <Bar
                         yAxisId="left"
                         dataKey="ebitdaBWT"
@@ -1611,7 +1611,7 @@ export default function ComparativoPage() {
                     )}
 
                     <
-// 
+
                     Area
                       yAxisId="left"
                       type="monotone"
@@ -1623,7 +1623,7 @@ export default function ComparativoPage() {
                     />
 
                     {isPlacaFiltrada && (
-                      // 
+                      
                       <Line
                         yAxisId="right"
                         type="monotone"
@@ -1634,21 +1634,21 @@ export default function ComparativoPage() {
                         dot={{ r: 5 }}
                       />
                     )}
-                  // 
-                  // 
-                  // 
-                  // 
-                  // 
-                  // 
-                  // 
+                  
+                  
+                  
+                  
+                  
+                  
+                  
                   </ComposedChart>
-                // 
-                // 
-                // 
-                // 
-                // 
-                // 
-                // 
+                
+                
+                
+                
+                
+                
+                
                 </ResponsiveContainer>
               </div>
 
@@ -1792,10 +1792,10 @@ export default function ComparativoPage() {
                   </div>
 
                   <
-// 
+
                   ResponsiveContainer width="100%" height={330}>
                     <
-// 
+
                     ComposedChart
                       data={placaEvolutionData}
                       margin={{ top: 20, right: 25, bottom: 5, left: 0 }}
@@ -1813,43 +1813,43 @@ export default function ComparativoPage() {
                       </defs>
 
                       <
-// 
+
                       CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
 
                       <
-// 
+
                       XAxis dataKey="periodo" tick={{ fontSize: 12, fill: '#6B7280' }} />
 
                       <
-// 
+
                       YAxis
                         yAxisId="left"
                         tick={{ fontSize: 11, fill: '#6B7280' }}
-                        // 
+                        
                         tickFormatter={(v) => `R$ ${(v / 1000).toFixed(0)}k`}
                       />
 
                       <
-// 
+
                       YAxis
                         yAxisId="right"
                         orientation="right"
                         tick={{ fontSize: 11, fill: '#6B7280' }}
-                        // 
+                        
                         tickFormatter={(v) => `${toNumber(v).toFixed(0)}%`}
                       />
 
                       <
-// 
+
                       Tooltip content={<
-                        // 
+                        
                         CustomTooltip />} />
                       <
-// 
+
                       Legend />
 
                       <
-// 
+
                       Bar
                         yAxisId="left"
                         dataKey="faturamento"
@@ -1860,7 +1860,7 @@ export default function ComparativoPage() {
                       />
 
                       <
-// 
+
                       Bar
                         yAxisId="left"
                         dataKey="resultado"
@@ -1871,7 +1871,7 @@ export default function ComparativoPage() {
                       />
 
                       <
-// 
+
                       Line
                         yAxisId="right"
                         type="monotone"
@@ -1881,21 +1881,21 @@ export default function ComparativoPage() {
                         strokeWidth={3}
                         dot={{ r: 5 }}
                       />
-                    // 
-                    // 
-                    // 
-                    // 
-                    // 
-                    // 
-                    // 
+                    
+                    
+                    
+                    
+                    
+                    
+                    
                     </ComposedChart>
-                  // 
-                  // 
-                  // 
-                  // 
-                  // 
-                  // 
-                  // 
+                  
+                  
+                  
+                  
+                  
+                  
+                  
                   </ResponsiveContainer>
                 </div>
               )}
