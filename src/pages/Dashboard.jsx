@@ -31,7 +31,14 @@ const CustomTooltip = ({ active, payload, label }) => {
 };
 
 export default function Dashboard() {
-  const { meses, selectedMesId, setSelectedMesId, periodoLabel, data } = useMonthData();
+  const {
+    meses,
+    selectedMesId,
+    setSelectedMesId,
+    periodoLabel,
+    data,
+    monthLoading,
+  } = useMonthData();
 
   const kpiGeral = {
     ebitdaBWT: Number(data?.kpiGeral?.ebitdaBWT || 0),

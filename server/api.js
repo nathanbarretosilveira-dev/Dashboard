@@ -188,14 +188,14 @@ router.get('/mes/:mes/:ano', async (req, res) => {
       `, [monthlyData.id]),
 
       dbAll(`
-        SELECT
-          rota,
-          viagens,
-          valor_total AS valorTotal
-        FROM rotas_realizadas
-        WHERE monthly_data_id = ?
-        ORDER BY valor_total DESC
-      `, [monthlyData.id]),
+  SELECT
+    rota,
+    viagens,
+    valor_total AS "valorTotal"
+  FROM rotas_realizadas
+  WHERE monthly_data_id = ?
+  ORDER BY valor_total DESC
+`, [monthlyData.id]),
 
       dbAll(`
         SELECT *
@@ -249,7 +249,7 @@ router.get('/mes/:mes/:ano', async (req, res) => {
       rotasRealizadas: rotasRealizadas.map((item) => ({
         rota: item.rota,
         viagens: toNumber(item.viagens),
-        valorTotal: toNumber(item.valorTotal),
+        valorTotal: toNumber(item.valorTotal ?? item.valortotal ?? item.valor_total),
       })),
 
       frotaVeiculos,
