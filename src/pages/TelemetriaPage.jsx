@@ -1,5 +1,7 @@
 import { useState } from 'react';
+// @ts-ignore
 import { RadarChart, Radar, PolarGrid, PolarAngleAxis, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
+// @ts-ignore
 import { Activity, Fuel, Clock, TrendingUp, Search } from 'lucide-react';
 import KPICard from '../components/KPICard';
 import { useMonthData } from '../lib/MonthDataContext';
@@ -17,9 +19,10 @@ const BWT_PLACAS = [
   "SER6B09", "SEX2C71", "SEX2C73", "SEX2C75", "SEY8B40", "SEY8B43", "SFA7F70",
   "SFA7G28", "SFC5F45", "SFC5F71", "SFC5G04", "SFF3I82", "SFF3I83", "TAW2A61",
   "TAW2A65", "TAW2A67", "TAW8B80", "TAW8B84", "TAW8B87", "TAW8B89", "TAW8B90",
-  "TAW8C01", "TAW8C09"
+  "TAW8C01", "TAW8C09", "UBT6J64"
 ];
 
+// @ts-ignore
 const faixaColors = {
   faixaVerde: '#10B981',
   faixaAzul: '#3B82F6',
@@ -27,6 +30,7 @@ const faixaColors = {
   faixaVermelha: '#EF4444',
 };
 
+// @ts-ignore
 const faixaLabels = {
   faixaVerde: 'Verde (Ideal)',
   faixaAzul: 'Azul (Boa)',
@@ -43,6 +47,7 @@ const mediaScore = (m) => {
 };
 
 // @ts-ignore
+// @ts-ignore
 const CustomTooltip = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null;
   return (
@@ -58,14 +63,23 @@ const CustomTooltip = ({ active, payload, label }) => {
 
 export default function TelemetriaPage() {
   const { data, periodoLabel } = useMonthData();
+  // @ts-ignore
   const telemetriaData = data.telemetriaData || [];
+  // @ts-ignore
   const frotaVeiculos = data.frotaVeiculos || [];
+  // @ts-ignore
   const bwtTelemetria = telemetriaData.filter(d => BWT_PLACAS.includes(d.placa));
+  // @ts-ignore
   const bwtFaturamento = frotaVeiculos.filter(d => BWT_PLACAS.includes(d.placa));
+  // @ts-ignore
   const avgMedia = bwtTelemetria.length ? bwtTelemetria.reduce((s, d) => s + (d.media || 0), 0) / bwtTelemetria.length : 0;
+  // @ts-ignore
   const avgMotorParado = bwtTelemetria.length ? bwtTelemetria.reduce((s, d) => s + (d.motorParado || 0), 0) / bwtTelemetria.length : 0;
+  // @ts-ignore
   const totalKm = bwtFaturamento.reduce((s, d) => s + (d.hodometro ?? 0), 0);
+  // @ts-ignore
   const totalLitros = bwtTelemetria.reduce((s, d) => s + (d.litros || 0), 0);
+  // @ts-ignore
   const faixaChart = bwtTelemetria.slice(0, 10).map(d => ({ name: (d.motorista || "").split(" ")[0], verde: d.faixaVerde, azul: d.faixaAzul, amarela: d.faixaAmarela, vermelha: d.faixaVermelha }));
   const [search, setSearch] = useState('');
 
@@ -74,6 +88,7 @@ export default function TelemetriaPage() {
     return <div className="p-4 lg:p-6"><h1 className="text-2xl font-bold text-foreground">Telemetria Sighra</h1><p className="text-sm text-muted-foreground mt-2">Sem dados para este mês selecionado.</p></div>;
   }
 
+  // @ts-ignore
   const filtered = bwtTelemetria.filter(d =>
     !search ||
     String(d.motorista || '').toLowerCase().includes(search.toLowerCase()) ||
@@ -93,36 +108,6 @@ export default function TelemetriaPage() {
         <KPICard title="Média Frota km/L" value={avgMedia.toFixed(2)} subtitle="Consumo médio" icon={Fuel} color="green" />
         <KPICard title="Combustível Total" value={`${fmtNum(totalLitros)} L`} subtitle="Consumo total" icon={Fuel} color="amber" />
         <KPICard title="Motor Parado (Média)" value={`${avgMotorParado.toFixed(2)}h`} subtitle="Por veículo" icon={Clock} color="red" />
-      </div>
-
-      {/* Faixa chart */}
-      <div className="bg-card rounded-xl border border-border p-5">
-        <div className="mb-4">
-          <h2 className="font-semibold text-foreground text-sm">Tempo por Faixa de Condução (horas)</h2>
-          <p className="text-xs text-muted-foreground mt-0.5">Verde = econômico · Vermelho = agressivo</p>
-        </div>
-        <ResponsiveContainer width="100%" height={240}>
-          <BarChart data={faixaChart} margin={{ top: 0, right: 10, left: 0, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-            <XAxis dataKey="name" tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} />
-            <YAxis tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} />
-            {/* @ts-ignore */}
-            <Tooltip content={<CustomTooltip />} />
-            <Bar dataKey="verde" name="Verde" fill="#10B981" stackId="a" />
-            <Bar dataKey="azul" name="Azul" fill="#3B82F6" stackId="a" />
-            <Bar dataKey="amarela" name="Amarela" fill="#F59E0B" stackId="a" />
-            <Bar dataKey="vermelha" name="Vermelha" fill="#EF4444" stackId="a" radius={[3, 3, 0, 0]} />
-          </BarChart>
-        </ResponsiveContainer>
-        <div className="flex flex-wrap gap-3 mt-3">
-          {Object.entries(faixaColors).map(([key, color]) => (
-            <div key={key} className="flex items-center gap-1.5">
-              <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: color }} />
-              {/* @ts-ignore */}
-              <span className="text-xs text-muted-foreground">{faixaLabels[key]}</span>
-            </div>
-          ))}
-        </div>
       </div>
 
       {/* Driver table */}

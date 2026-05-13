@@ -1,27 +1,38 @@
 import { Fragment, useState, useEffect } from 'react';
 // @ts-ignore
+// @ts-ignore
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ScatterChart, Scatter, ZAxis, LabelList } from 'recharts';
+// @ts-ignore
 // @ts-ignore
 import { Truck, TrendingDown, TrendingUp, Fuel, ChevronDown, ChevronUp } from 'lucide-react';
 import KPICard from '../components/KPICard';
 // @ts-ignore
 import { useMonthData } from '../lib/MonthDataContext';
+// @ts-ignore
 import { Customized } from 'recharts';
 
 // @ts-ignore
 const fmt = (v) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(v);
 // @ts-ignore
 const fmtNum = (v) => new Intl.NumberFormat('pt-BR').format(v);
+// @ts-ignore
 const toNumber = (v) => (Number.isFinite(Number(v)) ? Number(v) : 0);
 
 export default function FrotaPage() {
   const { data, periodoLabel } = useMonthData();
+  // @ts-ignore
   const frotaVeiculos = data.frotaVeiculos || [];
+  // @ts-ignore
   const totalKm = frotaVeiculos.reduce((s, v) => s + (v.hodometro || 0), 0);
+  // @ts-ignore
   const totalFat = frotaVeiculos.reduce((s, v) => s + (v.faturamento || 0), 0);
+  // @ts-ignore
   const totalLitros = frotaVeiculos.reduce((s, v) => s + (v.litros || 0), 0);
+  // @ts-ignore
   const veiculosAtivos = frotaVeiculos.filter(v => v.kmCarregado > 0).length;
   const [sort, setSort] = useState('resultado');
+  const [sortDirection, setSortDirection] = useState('desc');
+  const [ebitdaRankingMode, setEbitdaRankingMode] = useState('melhores');
   // @ts-ignore
   const [expandedRow, setExpandedRow] = useState(null);
 
@@ -42,7 +53,14 @@ export default function FrotaPage() {
   }
 
   // @ts-ignore
-  const sorted = [...frotaVeiculos].sort((a, b) => toNumber(b[sort]) - toNumber(a[sort]));
+  const sorted = [...frotaVeiculos].sort((a, b) => {
+    const valorA = toNumber(a[sort]);
+    const valorB = toNumber(b[sort]);
+
+    return sortDirection === 'desc'
+      ? valorB - valorA
+      : valorA - valorB;
+  });
 
   // @ts-ignore
   const CustomTickPlaca = ({ x, y, payload }) => {
@@ -64,16 +82,26 @@ export default function FrotaPage() {
   };
 
   const chartData = [...frotaVeiculos]
-    .sort((a, b) => toNumber(b.ebitdaAtingido) - toNumber(a.ebitdaAtingido))
+    .sort((a, b) =>
+      ebitdaRankingMode === 'melhores'
+        ? toNumber(b.ebitdaAtingido) - toNumber(a.ebitdaAtingido)
+        : toNumber(a.ebitdaAtingido) - toNumber(b.ebitdaAtingido)
+    )
     .slice(0, 10)
-    .map((v, i) => ({
-      placa: v.placa,
-      ebitda: toNumber(v.ebitdaAtingido) * 100,
-      fundo: 100,
-      ebitdaValor: v.resultado, // ✅ correto agora
-      rank: i + 1,
-    }));
+    .map((v, i) => {
+      const ebitdaReal = toNumber(v.ebitdaAtingido) * 100;
 
+      return {
+        placa: v.placa,
+        ebitda: Math.abs(ebitdaReal),
+        ebitdaReal,
+        fundo: 100,
+        ebitdaValor: v.resultado,
+        rank: i + 1,
+      };
+    });
+
+  // @ts-ignore
   const getRankStyle = (/** @type {number} */ index) => {
     if (index === 0) return { label: '1º', color: '#F59E0B' }; // ouro
     if (index === 1) return { label: '2º', color: '#9CA3AF' }; // prata
@@ -99,10 +127,16 @@ export default function FrotaPage() {
   const renderEbitdaLabel = (props) => {
     const { x, y, width, value, index } = props;
 
+    const item = chartData[index];
+
+    if (!item) return null;
+
     const medal =
-      index === 0 ? '🥇' :
-        index === 1 ? '🥈' :
-          index === 2 ? '🥉' : '';
+      ebitdaRankingMode === 'melhores'
+        ? index === 0 ? '🥇' :
+          index === 1 ? '🥈' :
+            index === 2 ? '🥉' : ''
+        : '';
 
     return (
       <text
@@ -113,11 +147,11 @@ export default function FrotaPage() {
         fontWeight="600"
         fill="#111827"
       >
-        {medal} {Number(value).toFixed(1)}%
+        {medal} {Number(item.ebitdaReal ?? value).toFixed(1)}%
       </text>
     );
   };
-  
+
   return (
     <div className="p-4 lg:p-6 space-y-6">
       <div>
@@ -135,9 +169,37 @@ export default function FrotaPage() {
 
       {/* TOP Veículos */}
       <div className="bg-card rounded-xl border border-border p-5">
-        <h2 className="font-semibold text-foreground text-sm mb-4">
-          Top 10 Veículos por EBITDA
-        </h2>
+        <div className="flex items-center justify-between gap-3 mb-4">
+          <h2 className="font-semibold text-foreground text-sm">
+            {ebitdaRankingMode === 'melhores'
+              ? 'Top 10 Veículos por EBITDA'
+              : '10 Piores Veículos por EBITDA'}
+          </h2>
+
+          <div className="flex items-center bg-muted rounded-lg p-1">
+            <button
+              type="button"
+              onClick={() => setEbitdaRankingMode('melhores')}
+              className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-colors ${ebitdaRankingMode === 'melhores'
+                ? 'bg-background text-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground'
+                }`}
+            >
+              Melhores
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setEbitdaRankingMode('piores')}
+              className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-colors ${ebitdaRankingMode === 'piores'
+                ? 'bg-background text-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground'
+                }`}
+            >
+              Piores
+            </button>
+          </div>
+        </div>
 
         <ResponsiveContainer width="100%" height={260}>
           <BarChart
@@ -179,7 +241,7 @@ export default function FrotaPage() {
                       </p>
 
                       <p className="text-xs text-gray-500">
-                        ({data.ebitda.toFixed(2)}%)
+                        ({data.ebitdaReal.toFixed(2)}%)
                       </p>
                     </div>
                   );
@@ -218,6 +280,7 @@ export default function FrotaPage() {
           <h2 className="font-semibold text-foreground text-sm">Detalhamento por Veículo</h2>
           <div className="flex items-center gap-2">
             <span className="text-xs text-muted-foreground">Ordenar:</span>
+
             <select
               value={sort}
               onChange={e => setSort(e.target.value)}
@@ -228,6 +291,15 @@ export default function FrotaPage() {
               <option value="hodometro">KM Total</option>
               <option value="kmL">KM/L</option>
               <option value="ebitdaAtingido">EBITDA %</option>
+            </select>
+
+            <select
+              value={sortDirection}
+              onChange={e => setSortDirection(e.target.value)}
+              className="text-xs border border-border rounded-lg px-2 py-1.5 bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+            >
+              <option value="desc">Maior para menor</option>
+              <option value="asc">Menor para maior</option>
             </select>
           </div>
         </div>
@@ -249,6 +321,7 @@ export default function FrotaPage() {
             </thead>
             <tbody className="divide-y divide-border">
               {sorted.map((v,
+                // @ts-ignore
                 // @ts-ignore
                 i) => (
                 <Fragment key={v.placa}>

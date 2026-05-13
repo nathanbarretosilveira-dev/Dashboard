@@ -12,7 +12,7 @@ const fmt = (v) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency:
 // @ts-ignore
 const fmtNum = (v) => new Intl.NumberFormat('pt-BR').format(v);
 
-const monthNames = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+const monthNames = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
 
 // @ts-ignore
 const CustomTooltip = ({ active, payload, label }) => {
@@ -42,6 +42,10 @@ export default function Dashboard() {
   const rotasRealizadas = data.rotasRealizadas || [];
   const frotaVeiculos = data.frotaVeiculos || [];
   const faturamentoData = data.faturamentoData || [];
+  const faturamentoPorDiaComTotal = faturamentoPorDia.map((item) => ({
+    ...item,
+    total: Number(item.bwt || 0) + Number(item.subcontratado || 0),
+  }));
 
   const totalFat = faturamentoPorDia.reduce((s, d) => s + d.faturamento, 0);
   const totalKm = frotaVeiculos.reduce((s, v) => s + v.hodometro, 0);
@@ -130,7 +134,7 @@ export default function Dashboard() {
             <span className="text-xs bg-primary/10 text-primary font-medium px-2 py-1 rounded-full">{periodoLabel}</span>
           </div>
           <ResponsiveContainer width="100%" height={220}>
-            <AreaChart data={faturamentoPorDia} margin={{ top: 5, right: 5, bottom: 0, left: 0 }}>
+            <AreaChart data={faturamentoPorDiaComTotal} margin={{ top: 5, right: 5, bottom: 0, left: 0 }}>
               <defs>
                 <linearGradient id="gbwt" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="#2563EB" stopOpacity={0.15} />
@@ -140,6 +144,10 @@ export default function Dashboard() {
                   <stop offset="5%" stopColor="#7C3AED" stopOpacity={0.15} />
                   <stop offset="95%" stopColor="#7C3AED" stopOpacity={0} />
                 </linearGradient>
+                <linearGradient id="gtotal" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#059669" stopOpacity={0.18} />
+                  <stop offset="95%" stopColor="#059669" stopOpacity={0} />
+                </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
               <XAxis dataKey="dia" tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} />
@@ -148,6 +156,7 @@ export default function Dashboard() {
               <Tooltip content={<CustomTooltip />} />
               <Area type="monotone" dataKey="bwt" name="BWT" stroke="#2563EB" strokeWidth={2} fill="url(#gbwt)" />
               <Area type="monotone" dataKey="subcontratado" name="Subcontratado" stroke="#7C3AED" strokeWidth={2} fill="url(#gsub)" />
+              <Area type="monotone" dataKey="total" name="Total" stroke="#059669" strokeWidth={3} fill="url(#gtotal)" />
             </AreaChart>
           </ResponsiveContainer>
         </div>
@@ -237,7 +246,7 @@ export default function Dashboard() {
             <BarChart
               data={topClientes}
               layout="vertical"
-              margin={{ left: 0, right: 80, top: 5, bottom: 5 }}
+              margin={{ left: -5, right: 55, top: 5, bottom: 5 }}
             >
               <CartesianGrid
                 strokeDasharray="3 3"
@@ -248,7 +257,9 @@ export default function Dashboard() {
 
               <XAxis
                 type="number"
-                tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }}
+                height={20}
+                domain={[0, (dataMax) => dataMax * 1.12]}
+                tick={{ fontSize: 8, fill: "hsl(var(--muted-foreground))" }}
                 tickFormatter={(v) => `R$ ${(v / 1000).toFixed(0)}k`}
               />
 
@@ -256,7 +267,7 @@ export default function Dashboard() {
                 type="category"
                 dataKey="cliente"
                 tick={{ fontSize: 10, fill: "hsl(var(--foreground))" }}
-                width={110}
+                width={100}
               />
 
               <Tooltip
