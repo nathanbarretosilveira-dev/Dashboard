@@ -1,89 +1,86 @@
-import sqlite3 from 'sqlite3';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import pg from 'pg';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const DB_PATH = path.join(__dirname, 'data.db');
+const { Pool } = pg;
 
-let db;
+let pool;
 
-export function initializeDB() {
-  return new Promise((resolve, reject) => {
-    db = new sqlite3.Database(DB_PATH, (err) => {
-      if (err) {
-        reject(err);
-        return;
-      }
+export async function initializeDB() {
+  if (!process.env.DATABASE_URL) {
+    throw new Error(
+      'DATABASE_URL não encontrada. Verifique se o arquivo .env existe na raiz do projeto e se server/index.js possui import "dotenv/config".'
+    );
+  }
 
-      db.run('PRAGMA foreign_keys = ON', async (err) => {
-        if (err) {
-          reject(err);
-          return;
-        }
-
-        try {
-          await createTables();
-          console.log(`Database initialized at ${DB_PATH}`);
-          resolve(db);
-        } catch (e) {
-          reject(e);
-        }
-      });
-    });
+  pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.DATABASE_URL.includes('sslmode=require')
+      ? { rejectUnauthorized: false }
+      : false,
   });
+
+  await createTables();
+
+  console.log('Postgres database initialized');
+
+  return pool;
 }
 
 async function createTables() {
   const tables = [
     `CREATE TABLE IF NOT EXISTS monthly_data (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      mes TEXT UNIQUE NOT NULL,
+      id SERIAL PRIMARY KEY,
+      mes TEXT NOT NULL,
       ano INTEGER NOT NULL,
-      data_importacao DATETIME DEFAULT CURRENT_TIMESTAMP,
-      kpi_geral_ebitda_bwt REAL,
-      kpi_geral_ebitda_subcontratado REAL,
-      kpi_geral_resultado_total REAL,
-      data_completa TEXT NOT NULL
+      data_importacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      kpi_geral_ebitda_bwt DOUBLE PRECISION,
+      kpi_geral_ebitda_subcontratado DOUBLE PRECISION,
+      kpi_geral_resultado_total DOUBLE PRECISION,
+      data_completa TEXT NOT NULL,
+      CONSTRAINT monthly_data_mes_ano_unique UNIQUE (mes, ano)
     )`,
+
     `CREATE TABLE IF NOT EXISTS faturamento_por_dia (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id SERIAL PRIMARY KEY,
       monthly_data_id INTEGER NOT NULL,
       dia TEXT NOT NULL,
-      bwt REAL,
-      subcontratado REAL,
-      faturamento REAL,
+      bwt DOUBLE PRECISION,
+      subcontratado DOUBLE PRECISION,
+      faturamento DOUBLE PRECISION,
       FOREIGN KEY(monthly_data_id) REFERENCES monthly_data(id) ON DELETE CASCADE
     )`,
+
     `CREATE TABLE IF NOT EXISTS rotas_realizadas (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id SERIAL PRIMARY KEY,
       monthly_data_id INTEGER NOT NULL,
       rota TEXT NOT NULL,
       viagens INTEGER,
-      valor_total REAL,
+      valor_total DOUBLE PRECISION,
       FOREIGN KEY(monthly_data_id) REFERENCES monthly_data(id) ON DELETE CASCADE
     )`,
+
     `CREATE TABLE IF NOT EXISTS frota_veiculos (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id SERIAL PRIMARY KEY,
       monthly_data_id INTEGER NOT NULL,
       modelo TEXT,
       ano INTEGER,
       placa TEXT,
       rota TEXT,
       motorista TEXT,
-      km_carregado REAL,
-      km_vazio REAL,
-      hodometro REAL,
-      faturamento REAL,
-      ebitda_estimado REAL,
-      ebitda_atingido REAL,
-      resultado REAL,
-      margem REAL,
-      km_l REAL,
-      litros REAL,
+      km_carregado DOUBLE PRECISION,
+      km_vazio DOUBLE PRECISION,
+      hodometro DOUBLE PRECISION,
+      faturamento DOUBLE PRECISION,
+      ebitda_estimado DOUBLE PRECISION,
+      ebitda_atingido DOUBLE PRECISION,
+      resultado DOUBLE PRECISION,
+      margem DOUBLE PRECISION,
+      km_l DOUBLE PRECISION,
+      litros DOUBLE PRECISION,
       FOREIGN KEY(monthly_data_id) REFERENCES monthly_data(id) ON DELETE CASCADE
     )`,
+
     `CREATE TABLE IF NOT EXISTS faturamento_data (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id SERIAL PRIMARY KEY,
       monthly_data_id INTEGER NOT NULL,
       cte TEXT,
       data TEXT,
@@ -91,39 +88,41 @@ async function createTables() {
       placa TEXT,
       rota TEXT,
       tomador TEXT,
-      quantidade REAL,
-      peso REAL,
-      valor_total REAL,
-      pedagio REAL,
+      quantidade DOUBLE PRECISION,
+      peso DOUBLE PRECISION,
+      valor_total DOUBLE PRECISION,
+      pedagio DOUBLE PRECISION,
       empresa TEXT,
       FOREIGN KEY(monthly_data_id) REFERENCES monthly_data(id) ON DELETE CASCADE
     )`,
+
     `CREATE TABLE IF NOT EXISTS rotas_catalogo (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id SERIAL PRIMARY KEY,
       monthly_data_id INTEGER NOT NULL,
       origem TEXT,
       destino TEXT,
       rota TEXT,
-      km REAL,
+      km DOUBLE PRECISION,
       pedagios INTEGER,
-      valor_pedagios REAL,
+      valor_pedagios DOUBLE PRECISION,
       FOREIGN KEY(monthly_data_id) REFERENCES monthly_data(id) ON DELETE CASCADE
     )`,
+
     `CREATE TABLE IF NOT EXISTS telemetria_data (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id SERIAL PRIMARY KEY,
       monthly_data_id INTEGER NOT NULL,
       motorista TEXT,
       placa TEXT,
-      km_rodado REAL,
-      litros REAL,
-      media REAL,
-      motor_parado REAL,
-      faixa_verde REAL,
-      faixa_azul REAL,
-      faixa_amarela REAL,
-      faixa_vermelha REAL,
+      km_rodado DOUBLE PRECISION,
+      litros DOUBLE PRECISION,
+      media DOUBLE PRECISION,
+      motor_parado DOUBLE PRECISION,
+      faixa_verde DOUBLE PRECISION,
+      faixa_azul DOUBLE PRECISION,
+      faixa_amarela DOUBLE PRECISION,
+      faixa_vermelha DOUBLE PRECISION,
       FOREIGN KEY(monthly_data_id) REFERENCES monthly_data(id) ON DELETE CASCADE
-    )`
+    )`,
   ];
 
   for (const sql of tables) {
@@ -131,49 +130,74 @@ async function createTables() {
   }
 }
 
+function convertSqlitePlaceholders(sql) {
+  let index = 0;
+
+  return sql.replace(/\?/g, () => {
+    index += 1;
+    return `$${index}`;
+  });
+}
+
+function normalizeReturning(sql) {
+  const trimmed = sql.trim();
+
+  if (
+    /^insert\s+into\s+monthly_data/i.test(trimmed) &&
+    !/returning\s+id/i.test(trimmed)
+  ) {
+    return `${sql} RETURNING id`;
+  }
+
+  return sql;
+}
+
 export function getDB() {
-  if (!db) {
+  if (!pool) {
     throw new Error('Database not initialized. Call initializeDB() first.');
   }
-  return db;
+
+  return pool;
 }
 
-export function closeDB() {
-  return new Promise((resolve, reject) => {
-    if (db) {
-      db.close((err) => {
-        if (err) reject(err);
-        else resolve();
-      });
-    } else {
-      resolve();
-    }
-  });
+export async function closeDB() {
+  if (pool) {
+    await pool.end();
+  }
 }
 
-export function dbRun(sql, params = []) {
-  return new Promise((resolve, reject) => {
-    db.run(sql, params, function(err) {
-      if (err) reject(err);
-      else resolve({ lastID: this.lastID, changes: this.changes });
-    });
-  });
+export async function dbRun(sql, params = []) {
+  if (!pool) {
+    throw new Error('Database not initialized. Call initializeDB() first.');
+  }
+
+  const pgSql = normalizeReturning(convertSqlitePlaceholders(sql));
+  const result = await pool.query(pgSql, params);
+
+  return {
+    lastID: result.rows?.[0]?.id,
+    changes: result.rowCount,
+  };
 }
 
-export function dbGet(sql, params = []) {
-  return new Promise((resolve, reject) => {
-    db.get(sql, params, (err, row) => {
-      if (err) reject(err);
-      else resolve(row);
-    });
-  });
+export async function dbGet(sql, params = []) {
+  if (!pool) {
+    throw new Error('Database not initialized. Call initializeDB() first.');
+  }
+
+  const pgSql = convertSqlitePlaceholders(sql);
+  const result = await pool.query(pgSql, params);
+
+  return result.rows[0];
 }
 
-export function dbAll(sql, params = []) {
-  return new Promise((resolve, reject) => {
-    db.all(sql, params, (err, rows) => {
-      if (err) reject(err);
-      else resolve(rows || []);
-    });
-  });
+export async function dbAll(sql, params = []) {
+  if (!pool) {
+    throw new Error('Database not initialized. Call initializeDB() first.');
+  }
+
+  const pgSql = convertSqlitePlaceholders(sql);
+  const result = await pool.query(pgSql, params);
+
+  return result.rows || [];
 }

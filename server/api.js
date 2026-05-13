@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import { dbRun, dbGet, dbAll } from './db.js';
+import 'dotenv/config';
 
 const router = express.Router();
 

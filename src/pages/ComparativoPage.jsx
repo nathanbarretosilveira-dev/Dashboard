@@ -27,7 +27,7 @@ import {
   Route,
 } from 'lucide-react';
 
-const API_BASE_URL = 'http://localhost:3001/api';
+const API_BASE_URL = 'http://localhost:4001/api';
 const ALL_PLACAS = '__all__';
 
 // @ts-ignore

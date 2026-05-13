@@ -1,6 +1,6 @@
 // Arquivo gerado automaticamente a partir da planilha 'Indicador Comercial 05.2026.xlsx'
 // Período: 05/2026
-// Última atualização: 13/05/2026 09:58:29
+// Última atualização: 13/05/2026 15:53:39
 // Execute: python utils/build_bwt_data.py
 
 export const kpiGeral = {
