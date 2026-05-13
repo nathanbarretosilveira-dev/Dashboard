@@ -12,7 +12,7 @@ import {
   Target,
   Route,
 } from 'lucide-react';
-import { Bar, ComposedChart, ResponsiveContainer } from 'recharts';
+import { Bar, ComposedChart, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { useEffect, useMemo, useState } from 'react';
 
 const API_BASE_URL =
