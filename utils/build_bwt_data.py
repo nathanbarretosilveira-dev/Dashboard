@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import math
+import os
 import re
 import zipfile
 import xml.etree.ElementTree as ET
@@ -22,7 +23,7 @@ ROOT = Path(__file__).resolve().parents[1]
 OUT_PATH = ROOT / "src/lib/bwtData.js"
 
 # API Backend
-API_BASE_URL = "http://localhost:4001/api"
+API_BASE_URL = os.getenv("API_BASE_URL", "http://localhost:4001/api")
 API_TIMEOUT = 60
 
 NS = {
