@@ -49,16 +49,67 @@ export default function Dashboard() {
   const rotasRealizadas = data.rotasRealizadas || [];
   const frotaVeiculos = data.frotaVeiculos || [];
   const faturamentoData = data.faturamentoData || [];
-  const faturamentoPorDiaComTotal = faturamentoPorDia.map((item) => ({
-    ...item,
-    total: Number(item.bwt || 0) + Number(item.subcontratado || 0),
-  }));
+  const getDiaNumber = (value) => {
+    const dia = Number(String(value || '').slice(0, 2));
+    return Number.isFinite(dia) ? dia : 0;
+  };
 
-  const totalFat = faturamentoPorDia.reduce((s, d) => s + d.faturamento, 0);
+  const ultimoDiaApurado = Math.max(
+    0,
+    ...faturamentoPorDia.map((item) => getDiaNumber(item.dia)),
+    ...faturamentoData.map((item) => getDiaNumber(item.data))
+  );
+
+  const faturamentoPorDiaComTotal = Array.from(
+    { length: ultimoDiaApurado },
+    (_, index) => {
+      const dia = String(index + 1).padStart(2, '0');
+
+      const existente = faturamentoPorDia.find(
+        (item) => String(item.dia).padStart(2, '0') === dia
+      );
+
+      const bwt = Number(existente?.bwt || 0);
+      const subcontratado = Number(existente?.subcontratado || 0);
+
+      return {
+        dia,
+        bwt,
+        subcontratado,
+        faturamento: Number(existente?.faturamento ?? bwt + subcontratado),
+        total: bwt + subcontratado,
+      };
+    }
+  );
+
+  const totalFat = faturamentoPorDiaComTotal.reduce(
+    (s, d) => s + Number(d.faturamento || d.total || 0),
+    0
+  );
+
   const totalKm = frotaVeiculos.reduce((s, v) => s + v.hodometro, 0);
   const totalLitros = frotaVeiculos.reduce((s, v) => s + v.litros, 0);
   const mediaKmL = totalLitros ? totalKm / totalLitros : 0;
-  const diasApurados = faturamentoPorDia.length;
+  const selectedMes = meses.find((m) => String(m.id) === String(selectedMesId));
+
+  const hoje = new Date();
+  const anoAtual = hoje.getFullYear();
+  const mesAtual = hoje.getMonth() + 1;
+  const diaAtual = hoje.getDate();
+
+  const mesSelecionado = Number(selectedMes?.mes || 0);
+  const anoSelecionado = Number(selectedMes?.ano || 0);
+
+  const ultimoDiaDoMesSelecionado = new Date(
+    anoSelecionado,
+    mesSelecionado,
+    0
+  ).getDate();
+
+  const diasApurados =
+    mesSelecionado === mesAtual && anoSelecionado === anoAtual
+      ? Math.max(1, diaAtual - 1)
+      : ultimoDiaApurado || ultimoDiaDoMesSelecionado;
   const ebitdaData = [
     { name: "BWT", value: kpiGeral.ebitdaBWT, color: "#2563EB" },
     { name: "Subcontratado", value: kpiGeral.ebitdaSubcontratado, color: "#7C3AED" },
